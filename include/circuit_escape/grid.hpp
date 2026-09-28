@@ -14,7 +14,7 @@ public:
     //* se verifica si una posicion este en un lugar valido asi cubriendo los dos bordes faltantes
     //? nodiscard: ayuda a que no se ignore el valor de retorno // constexpr : evaluacion en tiemp ode compilacion // noexcept : para garantizar que no lanzara una excepcion 
     [[nodiscard]] constexpr bool contains(Position position) const noexcept{
-        return position.row < Rows && position.column < Columns
+        return position.row < Rows && position.column < Columns;
     }
 
     //* se encarga del acceso  
