@@ -1,4 +1,6 @@
-#include<iostream>
+#pragma once
+#include <array>
+#include <iostream>
 #include "position.hpp"
 
 template <typename CellType, size_t Rows, size_t Columns>

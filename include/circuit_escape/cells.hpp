@@ -1,4 +1,5 @@
-#include <variant> 
+#pragma once
+#include <variant>
 struct Empty // espacio libre 
 {};
 struct Wall // muro 
