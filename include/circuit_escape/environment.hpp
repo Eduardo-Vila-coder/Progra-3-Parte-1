@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <vector>
 #include "cells.hpp"
+#include "game_rules.hpp"
 #include "grid.hpp"
 #include "observation.hpp"
 #include "position.hpp"
