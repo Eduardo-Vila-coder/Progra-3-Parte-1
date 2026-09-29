@@ -27,6 +27,12 @@ target_link_libraries(circuit_escape_core PUBLIC ftxui::screen ftxui::dom ftxui:
 # Aplicación ejecutable principal (app/main.cpp)
 add_executable(navigation_game
         app/main.cpp
+        include/circuit_escape/cells.hpp
+        include/circuit_escape/controllers.hpp
+        include/circuit_escape/environment.hpp
+        include/circuit_escape/grid.hpp
+        include/circuit_escape/observation.hpp
+        include/circuit_escape/position.hpp
 )
 target_link_libraries(navigation_game PRIVATE circuit_escape_core)
 

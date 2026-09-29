@@ -1,3 +1,4 @@
+#pragma once
 #include <optional>
 #include<iostream>
 struct Position
@@ -20,7 +21,7 @@ enum class Action
     wait   // cumple la funcion de ser una accion
 };
 
-//* se calcula la posicion adyacente a partir de un puntoal tratar de realizar una accion de movimiento
+//* se calcula la posicion adyacente a partir de un punto al tratar de realizar una accion de movimiento
 // usos de std::nullopt // sirve para indicar que se llego a un valor invalido en este caso
 std::optional<Position> neighbor(Position origin, Action action)
 {
@@ -28,20 +29,29 @@ std::optional<Position> neighbor(Position origin, Action action)
     switch (action)
     {
     case Action::up:
-        if (origin.row>= 1)return{Position{origin.row - 1, origin.column}}; //* retorno mediante constructor del enum 
+        if (origin.row >= 1)
+            return {Position{origin.row - 1, origin.column}}; //* retorno mediante constructor del enum
         break;
+
     case Action::down:
         return Position{origin.row + 1, origin.column};
+
     case Action::left:
-        if (origin.column>= 1)return{Position{origin.row, origin.column-1}};
+        if (origin.column >= 1)
+            return {Position{origin.row, origin.column-1}};
         break;
+
     case Action::right:
         return Position{origin.row, origin.column+1};
+
     case Action::wait:
         return origin;
     }
+
     return std::nullopt;
 }
+
+
 std::string toString(Position position)
 {
     //? uso del std::to_string para la conversion de valores numericos a string
