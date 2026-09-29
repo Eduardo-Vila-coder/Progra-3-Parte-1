@@ -54,7 +54,7 @@ public:
     [[nodiscard]] std::vector<Action> availableActions() const {
         std::vector<Action> actions;
 
-        // Iteramos sobre cada accion existente
+        // Iteramos sobre cada accion existente [se usó IA para saber cómo iterar sobre Enum]
         for (std::size_t i = 0; i <= 4; i++) {
             Action action = static_cast<Action>(i);
 
@@ -67,6 +67,12 @@ public:
 
             // Ignoramos la accion si esta produce una posicion que no se encuentre dentro del tablero
             if (!initialGrid.contains(position)) {
+                continue;
+            }
+
+            // Ignoramos la accion si esta produce una posicion que traspase un muro
+            // [Se usó IA para saber cómo identificar si el CellType es Wall]
+            if (std::holds_alternative<Wall>(initialGrid.at(position))) {
                 continue;
             }
 
