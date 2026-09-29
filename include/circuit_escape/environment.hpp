@@ -134,7 +134,7 @@ public:
         // INVARIANTE: Un agente sin energía no puede ejecutar otra acción
         if (energy_ == 0) {
             active_ = false; // Se desactiva el agente
-            return;          // Sale de la función sin ejecutar el turno
+            return StepResult{};          // Sale de la función sin ejecutar el turno
         }
 
         //Incrementamos el turno
@@ -168,6 +168,7 @@ public:
         }
 
         //MATHIAS AÑADIRÁ SU CÓDIGO DE CONDICIONES DE TÉRMINO (checkEnd)
+        return StepResult{};
     }
 
     [[nodiscard]] const Grid<Cell, Rows, Columns>& grid() const noexcept {}
