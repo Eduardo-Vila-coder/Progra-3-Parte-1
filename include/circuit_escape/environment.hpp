@@ -115,7 +115,49 @@ public:
 
     [[nodiscard]] bool isFinished() const noexcept {}
 
-    [[nodiscard]] StepResult step(Action action) {}
+    [[nodiscard]] StepResult step(Action action) {
+        if (!active_) {
+            throw std::logic_error("Error: la partida ya termino");
+        }
+
+        // INVARIANTE: Un agente sin energía no puede ejecutar otra acción
+        if (energy_ == 0) {
+            active_ = false; // Se desactiva el agente
+            return;          // Sale de la función sin ejecutar el turno
+        }
+
+        //Incrementamos el turno
+        turn_++;
+
+        //Validamos la acción
+        if (action == Action::wait) {
+            // Si espera, no se mueve. Solo gasta energía.
+            // (Eduardo pon aquí las GameRules)
+            changeEnergy(-1);
+
+        } else {
+            std::optional<Position> target = targetOf(action);
+
+            if (target.has_value()) {
+                // Movimiento válido
+                agent_ = *target; // Actualiza la posición
+                changeEnergy(-1);     // Descuenta el costo de moverse
+
+                //CRISTHIAN AÑADIRÁ SU CÓDIGO DE EFECTOS DE CELDAS (applyCellEffect)
+
+            } else {
+                // MOVIMIENTO RECHAZADO (chocó contra muro o borde)
+                changeEnergy(-1); // Gasta energía por el intento fallido
+            }
+        }
+
+        // Protege la invariante de energía (no puede bajar de cero)
+        if (energy_ < 0) {
+            energy_ = 0;
+        }
+
+        //MATHIAS AÑADIRÁ SU CÓDIGO DE CONDICIONES DE TÉRMINO (checkEnd)
+    }
 
     [[nodiscard]] const Grid<Cell, Rows, Columns>& grid() const noexcept {}
 
