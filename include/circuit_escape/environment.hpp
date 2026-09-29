@@ -44,12 +44,12 @@ private:
         std::optional<Position> candidate = neighbor(agent_, action);
 
         // Si neighbor falló, o si se sale del tablero:
-        if (!candidate.has_value() || !grid_.contains(*candidate)) {
+        if (!candidate.has_value() || !initialGrid.contains(*candidate)) {
             return std::nullopt;
         }
 
         // Si la celda destino es un muro (obstáculo):
-        if (std::holds_alternative<Wall>(grid_.at(*candidate))) {
+        if (std::holds_alternative<Wall>(initialGrid.at(*candidate))) {
             return std::nullopt;
         }
 
@@ -96,7 +96,6 @@ public:
         for (std::size_t i = 0; i <= 4; i++) {
             Action action = static_cast<Action>(i);
 
-<<<<<<< HEAD
             std::optional<Position> optionalPosition{neighbor(start, action)};  // Cambiar start por la posicion del agente
 
             // Ignoramos la accion si esta produce una posicion con indices negativos
@@ -107,15 +106,6 @@ public:
             // Como sabemos que si hay una posicion, se la asignamos a una variable no opcional
             Position position(optionalPosition.value());
 
-=======
-            std::optional<Position> position{neighbor(start, action)};
-
-            // Ignoramos la accion si esta produce una posicion con indices negativos
-            if (!position.has_value()) {
-                continue;
-            }
-
->>>>>>> origin/main
             // Ignoramos la accion si esta produce una posicion que no se encuentre dentro del tablero
             if (!initialGrid.contains(position)) {
                 continue;
@@ -136,9 +126,6 @@ public:
 
     [[nodiscard]] bool isFinished() const noexcept {}
 
-<<<<<<< HEAD
-    [[nodiscard]] StepResult step(Action action) {}
-=======
     [[nodiscard]] StepResult step(Action action) {
         if (!active_) {
             throw std::logic_error("Error: la partida ya termino");
@@ -182,7 +169,6 @@ public:
 
         //MATHIAS AÑADIRÁ SU CÓDIGO DE CONDICIONES DE TÉRMINO (checkEnd)
     }
->>>>>>> origin/main
 
     [[nodiscard]] const Grid<Cell, Rows, Columns>& grid() const noexcept {}
 
