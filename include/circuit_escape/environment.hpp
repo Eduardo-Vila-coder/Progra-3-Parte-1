@@ -21,6 +21,36 @@ private:
     std::size_t turnLimit;
 
     Position start; // Atributo original segun el informe
+    int turn_{0};
+
+    // INVARIANTE: La energía se mantiene entre el Mín y Máx
+    void changeEnergy(int amount) {
+        energy_ += amount;
+
+        if (energy_ < 0) {
+            energy_ = 0;
+        } else if (energy_ > maxEnergy_) {
+            energy_ = maxEnergy_;
+        }
+    }
+
+    // Calculamos la posición destino. Retorna nullopt si el movimiento choca o se sale.
+    // [Se usó IA para la lógica]
+    std::optional<Position> targetOf(Action action) const {
+        std::optional<Position> candidate = neighbor(agent_, action);
+
+        // Si neighbor falló, o si se sale del tablero:
+        if (!candidate.has_value() || !grid_.contains(*candidate)) {
+            return std::nullopt;
+        }
+
+        // Si la celda destino es un muro (obstáculo):
+        if (std::holds_alternative<Wall>(grid_.at(*candidate))) {
+            return std::nullopt;
+        }
+
+        return candidate; // El movimiento es válido
+    }
 
 public:
     // Constructor: Configura el entorno y verifica las invariantes
