@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <stdexcept>
 #include <vector>
 #include "cells.hpp"
@@ -21,6 +22,7 @@ private:
     std::size_t turnLimit;
 
     Position start; // Atributo original segun el informe
+    int initialEnergy; // Atributo original segun el informe
 
 public:
     // Constructor: Configura el entorno y verifica las invariantes
@@ -38,6 +40,10 @@ public:
             throw std::invalid_argument("Error: El agente inicia dentro de un muro");
         }
     }
+
+
+    NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, int initialEnergy, std::size_t turnLimit)
+        : initialGrid(initialGrid), start(start), initialEnergy(initialEnergy), turnLimit(turnLimit) {}     // Constructor original
 
     // Métodos para consultar el estado del agente
     Position getAgentPosition() const { return agent_; }
@@ -58,12 +64,15 @@ public:
         for (std::size_t i = 0; i <= 4; i++) {
             Action action = static_cast<Action>(i);
 
-            std::optional<Position> position{neighbor(start, action)};
+            std::optional<Position> optionalPosition{neighbor(start, action)};  // Cambiar start por la posicion del agente
 
             // Ignoramos la accion si esta produce una posicion con indices negativos
-            if (!position.has_value()) {
+            if (!optionalPosition.has_value()) {
                 continue;
             }
+
+            // Como sabemos que si hay una posicion, se la asignamos a una variable no opcional
+            Position position(optionalPosition.value());
 
             // Ignoramos la accion si esta produce una posicion que no se encuentre dentro del tablero
             if (!initialGrid.contains(position)) {
