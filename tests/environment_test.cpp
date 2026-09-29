@@ -3,9 +3,13 @@
 //
 
 #include <cassert>
+#include "../include/circuit_escape/environment.hpp"
+#include "../include/circuit_escape/cells.hpp"
 
 int main() {
-    // Prueba base inicial
-    assert(true);
+    Grid<Empty, 20, 30> grid{};
+
+    NavigationEnvironment<20, 30> env{};
+
     return 0;
 }
