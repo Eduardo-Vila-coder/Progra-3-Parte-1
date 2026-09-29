@@ -40,12 +40,12 @@ private:
         std::optional<Position> candidate = neighbor(agent_, action);
 
         // Si neighbor falló, o si se sale del tablero:
-        if (!candidate.has_value() || !grid_.contains(*candidate)) {
+        if (!candidate.has_value() || !initialGrid.contains(*candidate)) {
             return std::nullopt;
         }
 
         // Si la celda destino es un muro (obstáculo):
-        if (std::holds_alternative<Wall>(grid_.at(*candidate))) {
+        if (std::holds_alternative<Wall>(initialGrid.at(*candidate))) {
             return std::nullopt;
         }
 
@@ -54,8 +54,8 @@ private:
 
 public:
     // Constructor: Configura el entorno y verifica las invariantes
-    NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, Position startPos, int startEnergy, std::size_t turnLimit)
-        :  initialGrid(initialGrid), start(start), agent_(startPos), energy_(startEnergy), maxEnergy_(startEnergy), turnLimit(turnLimit) {
+    NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, int startEnergy, std::size_t turnLimit)
+        :  initialGrid(initialGrid), start(start), agent_(start), energy_(startEnergy), maxEnergy_(startEnergy), turnLimit(turnLimit) {
 
         // INVARIANTE: La posición del agente siempre pertenece al tablero
         if (! initialGrid.contains(agent_)) {
@@ -88,7 +88,7 @@ public:
         for (std::size_t i = 0; i <= 4; i++) {
             Action action = static_cast<Action>(i);
 
-            std::optional<Position> position{neighbor(start, action)};
+            std::optional<Position> position{neighbor(agent_, action)};
 
             // Ignoramos la accion si esta produce una posicion con indices negativos
             if (!position.has_value()) {
@@ -96,13 +96,13 @@ public:
             }
 
             // Ignoramos la accion si esta produce una posicion que no se encuentre dentro del tablero
-            if (!initialGrid.contains(position)) {
+            if (!initialGrid.contains(*position)) {
                 continue;
             }
 
             // Ignoramos la accion si esta produce una posicion que traspase un muro
             // [Se usó IA para saber cómo identificar si el CellType es Wall]
-            if (std::holds_alternative<Wall>(initialGrid.at(position))) {
+            if (std::holds_alternative<Wall>(initialGrid.at(*position))) {
                 continue;
             }
 
@@ -123,7 +123,7 @@ public:
         // INVARIANTE: Un agente sin energía no puede ejecutar otra acción
         if (energy_ == 0) {
             active_ = false; // Se desactiva el agente
-            return;          // Sale de la función sin ejecutar el turno
+            return StepResult{};          // Sale de la función sin ejecutar el turno
         }
 
         //Incrementamos el turno
@@ -157,6 +157,8 @@ public:
         }
 
         //MATHIAS AÑADIRÁ SU CÓDIGO DE CONDICIONES DE TÉRMINO (checkEnd)
+
+        return StepResult{};
     }
 
     [[nodiscard]] const Grid<Cell, Rows, Columns>& grid() const noexcept {}
