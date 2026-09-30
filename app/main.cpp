@@ -33,7 +33,6 @@
 #include "circuit_escape/controllers.hpp"
 #include "circuit_escape/environment.hpp"
 #include "circuit_escape/game_rules.hpp"
-#include "circuit_escape/overloaded.hpp"
 #include "circuit_escape/scenario.hpp"
 
 #ifdef _WIN32
@@ -108,7 +107,7 @@ Options parseOptions(int argc, char* argv[]) {
 }
 
 // Controlador automático elegido en ejecución. Para el jugador humano devuelve nullptr:
-// la consola traduce la tecla y la entrega directamente a step (enunciado 5.7).
+// en ese caso la partida usa un HumanController al que la consola le entrega cada tecla.
 std::unique_ptr<IController> makeController(ControllerKind kind, std::uint32_t seed) {
     switch (kind) {
     case ControllerKind::random:
@@ -119,21 +118,6 @@ std::unique_ptr<IController> makeController(ControllerKind kind, std::uint32_t s
         break;
     }
     return nullptr;
-}
-
-// Resultado de la partida (enunciado 4): si se completó, turnos, energía, recursos y puntaje
-std::string finalSummary(EndReason reason, const Observation& observation) {
-    std::string outcome;
-    switch (reason) {
-    case EndReason::goalReached: outcome = "¡Partida completada!"; break;
-    case EndReason::noEnergy:    outcome = "Sin energía."; break;
-    case EndReason::turnLimit:   outcome = "Límite de turnos alcanzado."; break;
-    case EndReason::none:        outcome = "Partida en curso."; break;
-    }
-    return outcome + " Turnos " + std::to_string(observation.turn) +
-           " | Energía " + std::to_string(observation.energy) +
-           " | Recursos " + std::to_string(observation.collectedResources) +
-           " | Puntaje " + std::to_string(observation.score);
 }
 
 // Partida automática completa sin interfaz: solo usa la interfaz IController (despacho dinámico)
@@ -148,64 +132,21 @@ int runHeadless(DemoEnvironment& environment, IController& controller, std::uint
     return 0;
 }
 
-// Partida interactiva con FTXUI
+// Partida interactiva con FTXUI: GameSession coordina el ciclo y FTXUI solo entrega teclas y dibuja
 int runInteractive(DemoEnvironment& environment, std::unique_ptr<IController> automatic, RenderMode mode) {
     const ConsoleUI ui{mode};
-    std::vector<NavigationEvent> recentEvents;  // eventos del último step (los muestra el pie)
-    bool showHelp = false;
-    std::string message = automatic ? "Modo automático: pulsa Espacio o Enter para avanzar un turno." : "";
+    GameSession session{environment, ui, std::move(automatic)};
 
     auto screen = ftxui::ScreenInteractive::FitComponent();
-
-    // Ejecuta un turno y guarda sus eventos para dibujarlos
-    auto play = [&](Action action) {
-        StepResult result = environment.step(action);
-        recentEvents = std::move(result.events);
-        message = result.finished ? finalSummary(result.reason, result.observation) + " Pulsa Q para salir." : "";
-    };
-
-    // La UI solo dibuja el estado que produce el entorno
-    auto component = ftxui::Renderer([&] {
-        ftxui::Element view = showHelp ? ui.help() : ui.render(environment, recentEvents);
-        return ftxui::vbox({view, ftxui::text(message)});
-    });
+    auto component = ftxui::Renderer([&] { return session.render(); });
 
     // Cada pulsación llega como un ftxui::Event, sin prompt ni Enter (lectura inmediata)
     component = ftxui::CatchEvent(component, [&](const ftxui::Event& event) {
-        const std::optional<UiCommand> command = ui.translate(event);
-
-        if (!command) {
-            // Modo automático: Espacio o Enter pide la acción al controlador
-            const bool advance = event == ftxui::Event::Character(' ') || event == ftxui::Event::Return;
-            if (automatic && advance && !environment.isFinished()) {
-                const Observation observation = environment.state();
-                play(automatic->selectAction(observation, observation.availableActions));
-                return true;
-            }
-            // Tecla desconocida: se muestra un mensaje y NO se ejecuta step (enunciado 5.8)
-            if (event.is_character() || event == ftxui::Event::Return) {
-                message = environment.isFinished()
-                              ? "La partida terminó. Pulsa Q para salir."
-                              : "Tecla no reconocida. Pulsa H para ver la ayuda.";
-                return true;
-            }
-            return false;  // otros eventos (mouse, cambio de tamaño) los maneja FTXUI
+        const KeyResult result = session.handle(event);
+        if (result == KeyResult::quit) {
+            screen.Exit();
         }
-
-        std::visit(Overloaded{
-            [&](QuitCommand) { screen.Exit(); },
-            [&](HelpCommand) { showHelp = !showHelp; },
-            [&](Action action) {
-                if (environment.isFinished()) {
-                    message = "La partida terminó. Pulsa Q para salir.";
-                } else if (automatic) {
-                    message = "Modo automático: pulsa Espacio o Enter para avanzar un turno.";
-                } else {
-                    play(action);  // jugador humano: la acción va directo a step
-                }
-            },
-        }, *command);
-        return true;
+        return result != KeyResult::ignored;
     });
 
     screen.Loop(component);

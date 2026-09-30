@@ -89,7 +89,8 @@ std::optional<UiCommand> ConsoleUI::translate(const ftxui::Event &event) const
 }
 
 ftxui::Element ConsoleUI::render(const NavigationEnvironment<20, 30> &environment,
-                                 std::span<const NavigationEvent> recentEvents) const
+                                 std::span<const NavigationEvent> recentEvents,
+                                 bool automatic) const
 {
     using namespace ftxui;
     const Observation state = environment.state();
@@ -134,9 +135,18 @@ ftxui::Element ConsoleUI::render(const NavigationEnvironment<20, 30> &environmen
         gridRows.push_back(hbox(std::move(rowElements)));
     }
 
-    //? pie: el último evento junto a una ayuda breve (sin prompt ni cursor de entrada)
-    const std::string lastEvent = recentEvents.empty() ? "Listo" : describe(recentEvents.back());
-    Element footer = text(lastEvent + " | WASD mover · E esperar · H ayuda · Q salir");
+    //? pie: el último evento relevante junto a una ayuda breve (sin prompt ni cursor de entrada).
+    //? Se prefiere el último evento que NO sea un cambio de energía (la energía ya está en la barra de estado)
+    std::string lastEvent = "Listo";
+    if (!recentEvents.empty())
+    {
+        const auto relevant = std::find_if(recentEvents.rbegin(), recentEvents.rend(), [](const NavigationEvent &event)
+                                           { return !holdsAnyOf<EnergyChangedEvent>(event); });
+        lastEvent = describe(relevant != recentEvents.rend() ? *relevant : recentEvents.back());
+    }
+    const std::string controls = automatic ? "Espacio/Enter avanzar · H ayuda · Q salir"
+                                           : "WASD mover · E esperar · H ayuda · Q salir";
+    Element footer = text(lastEvent + " | " + controls);
 
     return vbox({statusBar,
                  vbox(std::move(gridRows)),
@@ -193,4 +203,111 @@ ftxui::Element ConsoleUI::help() const
     help_lines.push_back(text("Pulsa H para volver al tablero") | dim);
 
     return vbox(std::move(help_lines)) | border;
+}
+
+std::string finalSummary(EndReason reason, const Observation &observation)
+{
+    std::string outcome;
+    switch (reason)
+    {
+    case EndReason::goalReached: outcome = "¡Partida completada!"; break;
+    case EndReason::noEnergy:    outcome = "Sin energía."; break;
+    case EndReason::turnLimit:   outcome = "Límite de turnos alcanzado."; break;
+    case EndReason::none:        outcome = "Partida en curso."; break;
+    }
+    return outcome + " Turnos " + std::to_string(observation.turn) +
+           " | Energía " + std::to_string(observation.energy) +
+           " | Recursos " + std::to_string(observation.collectedResources) +
+           " | Puntaje " + std::to_string(observation.score);
+}
+
+// ===== GameSession =====
+
+namespace
+{
+const std::string automaticHint = "Modo automático: pulsa Espacio o Enter para avanzar un turno.";
+} // namespace
+
+GameSession::GameSession(NavigationEnvironment<20, 30> &environment, const ConsoleUI &ui,
+                         std::unique_ptr<IController> automatic)
+    : environment_(environment), ui_(ui), automatic_(std::move(automatic)),
+      message_(automatic_ ? automaticHint : "")
+{
+}
+
+// Ejecuta un turno y guarda sus eventos para dibujarlos
+void GameSession::play(Action action)
+{
+    StepResult result = environment_.step(action);
+    recentEvents_ = std::move(result.events);
+    if (result.finished)
+    {
+        finalResult_ = finalSummary(result.reason, result.observation); // el pie ya indica "Q salir"
+    }
+    message_ = finalResult_;
+}
+
+// Pide la acción a un controlador (humano o automático) mediante la interfaz IController
+void GameSession::decideWith(IController &controller)
+{
+    const Observation observation = environment_.state();
+    play(controller.selectAction(observation, observation.availableActions)); // despacho dinámico
+}
+
+KeyResult GameSession::handle(const ftxui::Event &event)
+{
+    const std::optional<UiCommand> command = ui_.translate(event);
+
+    if (!command)
+    {
+        // Modo automático: Espacio o Enter pide la acción al controlador
+        const bool advance = event == ftxui::Event::Character(' ') || event == ftxui::Event::Return;
+        if (automatic_ && advance && !environment_.isFinished())
+        {
+            decideWith(*automatic_);
+            return KeyResult::handled;
+        }
+        // Tecla desconocida: se muestra un mensaje y NO se ejecuta step (enunciado 5.8)
+        if (event.is_character() || event == ftxui::Event::Return)
+        {
+            message_ = environment_.isFinished() ? finalResult_ : "Tecla no reconocida. Pulsa H para ver la ayuda.";
+            return KeyResult::handled;
+        }
+        return KeyResult::ignored; // otros eventos (mouse, cambio de tamaño) los maneja FTXUI
+    }
+
+    return std::visit(Overloaded{
+                          [](QuitCommand)
+                          { return KeyResult::quit; },
+                          [this](HelpCommand)
+                          {
+                              showHelp_ = !showHelp_;
+                              return KeyResult::handled;
+                          },
+                          [this](Action action)
+                          {
+                              if (environment_.isFinished())
+                              {
+                                  message_ = finalResult_;
+                              }
+                              else if (automatic_)
+                              {
+                                  message_ = automaticHint;
+                              }
+                              else
+                              {
+                                  human_.provide(action); // la interfaz entrega la decisión al controlador humano
+                                  decideWith(human_);
+                              }
+                              return KeyResult::handled;
+                          },
+                      },
+                      *command);
+}
+
+ftxui::Element GameSession::render() const
+{
+    // La UI solo dibuja el estado que produce el entorno
+    ftxui::Element view = showHelp_ ? ui_.help() : ui_.render(environment_, recentEvents_, isAutomatic());
+    return ftxui::vbox({view, ftxui::text(message_)});
 }

@@ -242,6 +242,22 @@ int main() {
         static_assert(CellTraits<Empty>::traversable);                 // plantilla general
         static_assert(CellTraits<RoughTerrain>::traversable);
 
+        // Consumibles: la batería (total) y toda la familia de recursos (parcial) se usan una sola vez
+        static_assert(CellTraits<Battery>::consumable);
+        static_assert(CellTraits<ResourceCell<int>>::consumable);
+        static_assert(CellTraits<ResourceCell<double>>::consumable);
+        static_assert(!CellTraits<Trap>::consumable);   // la trampa se aplica en cada entrada
+        static_assert(!CellTraits<Empty>::consumable);
+        static_assert(!CellTraits<Wall>::consumable);
+
+        assert(!isSpent(Cell{Battery{}}));
+        assert(isSpent(Cell{Battery{3, true}}));
+        assert(!isSpent(Cell{ResourceCell<int>{10, false}}));
+        assert(isSpent(Cell{ResourceCell<int>{10, true}}));
+        assert(!isSpent(Cell{Trap{}}));
+        assert(!isTraversable(Cell{Wall{}}));
+        assert(isTraversable(Cell{ResourceCell<int>{}}));
+
         // El entorno usa los rasgos para decidir qué movimientos son legales
         Grid<Cell, 3, 4> g{};
         g.at({2, 3}) = Exit{};

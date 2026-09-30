@@ -1,5 +1,7 @@
 #pragma once
+#include <cstddef>
 #include <optional>
+#include <string>
 #include<iostream>
 struct Position
 {

@@ -122,12 +122,12 @@ int main() {
 
     // 6. describe: un texto para cada tipo de evento
     {
-        assert(describe(MovedEvent{{1, 1}, {1, 2}, 2}) == "Movimiento (1,1) -> (1,2) (costo 2)");
-        assert(describe(MovementRejectedEvent{{0, 0}, Action::up}) == "Movimiento rechazado hacia arriba desde (0,0)");
+        assert(describe(MovedEvent{{1, 1}, {1, 2}, 2}) == "Mueve (1,1) -> (1,2) costo 2");
+        assert(describe(MovementRejectedEvent{{0, 0}, Action::up}) == "Rechazado: arriba en (0,0)");
         assert(describe(ResourceCollectedEvent{{2, 3}, 10}) == "Recurso +10 en (2,3)");
         assert(describe(EnergyChangedEvent{5, 3}) == "Energia 5 -> 3");
-        assert(describe(TrapTriggeredEvent{{1, 0}}) == "Trampa activada en (1,0)");
-        assert(describe(GoalReachedEvent{{1, 3}}) == "Salida alcanzada en (1,3)");
+        assert(describe(TrapTriggeredEvent{{1, 0}}) == "Trampa en (1,0)");
+        assert(describe(GoalReachedEvent{{1, 3}}) == "Salida en (1,3)");
     }
 
     // 7. appendEvents (fold expression con ,) respeta el orden y admite cero argumentos
