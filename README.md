@@ -62,13 +62,13 @@ ctest --test-dir build -C Debug --output-on-failure   # Windows con Visual Studi
 | Prueba | Qué cubre |
 |---|---|
 | `grid_test` | acceso válido e inválido, bordes y esquinas, versiones const, iteradores y orden por filas |
-| `environment_test` | acciones disponibles, movimientos, perfiles, término y precedencia, precondiciones del constructor, `CellTraits` |
+| `environment_test` | acciones disponibles, movimientos, perfiles, término y precedencia, precondiciones del constructor, `CellTraits` (transitable y consumible) |
 | `interactions_test` | costos, recurso, batería, trampa y límites de energía |
 | `events_test` | los 6 tipos de evento, `std::visit`, fold expressions, `countEvents` con varios contenedores |
-| `controllers_test` | `bestBy`, políticas aleatoria y heurística, concept `NavigationPolicy` |
+| `controllers_test` | `bestBy`, políticas aleatoria y heurística, concept `NavigationPolicy`, `HumanController` y colección polimórfica de `IController` |
 | `scenarios_test` | carga de mapas, los dos escenarios de 20 × 30 y sus rutas comprobadas |
 | `simulation_test` | `reset(seed)` y simulación reproducible con semilla fija |
-| `ui_test` | traducción de teclas, comando desconocido, emoji/ASCII de cada celda, render de 20 × 30 |
+| `ui_test` | traducción de teclas, `GameSession` (tecla desconocida sin modificar el entorno, modo humano y automático, resultado final visible), emoji/ASCII de cada celda, render de 20 × 30, pie con el último evento relevante |
 
 Las pruebas del motor no leen `std::cin` ni escriben en `std::cout`; solo `ui_test` se enlaza con FTXUI.
 
@@ -153,7 +153,7 @@ Semilla 42: ¡Partida completada! Turnos 31 | Energía 32 | Recursos 0 | Puntaje
 | 🏁 | `S` | salida |
 
 La pantalla muestra la barra de estado (turno, energía, puntaje, recursos), la regla de coordenadas,
-las 20 filas del tablero y un pie con el último evento y la ayuda breve. Cada celda y cada coordenada
+las 20 filas del tablero y un pie con el último evento relevante y la ayuda breve (cabe en 80 columnas). Cada celda y cada coordenada
 ocupa exactamente 2 columnas, así que cada fila mide 62 columnas.
 
 ## Perfiles de dificultad
@@ -197,6 +197,7 @@ en `standard`; en el escenario 1 se queda sin energía (el enunciado no exige qu
 | `std::vector<Action>` / `std::vector<NavigationEvent>` | acciones legales, eventos de un paso | tamaño variable pequeño, recorrido en orden; se entrega por `std::span` sin copiar |
 | `std::optional<Position>` | `neighbor`, `targetOf` | un movimiento puede no tener destino válido |
 | `std::unique_ptr<IController>` | controlador automático | dueño único de un objeto polimórfico elegido en ejecución |
+| `std::optional<Action>` | `HumanController` | decisión del teclado pendiente o ausente |
 | `std::mt19937` | `RandomPolicy` | generador con semilla controlable: simulaciones reproducibles |
 | `std::list`, `std::deque` | pruebas | comprueban que los algoritmos genéricos no dependen del contenedor |
 
@@ -208,8 +209,8 @@ No se usa `std::map` ni `std::unordered_map`: las celdas se indexan por posició
 ```text
 include/circuit_escape/   motor (grid, celdas, posición, reglas, eventos, entorno, controladores,
                           escenarios, simulación) y la cabecera de la interfaz (console_ui.hpp)
-src/                      implementación no genérica: controladores e interfaz FTXUI
-app/main.cpp              ejecutable: opciones, bucle de FTXUI y modo headless
+src/                      implementación no genérica: controladores, interfaz FTXUI y GameSession
+app/main.cpp              ejecutable: opciones de línea de comandos, bucle de FTXUI y modo headless
 tests/                    pruebas con assert registradas en CTest (+ tests/negative/)
 assets/maps/              escenarios de 20 × 30
 docs/                     design.md y contributions.md

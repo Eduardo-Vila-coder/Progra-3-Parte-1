@@ -3,6 +3,7 @@
 #include <iostream>
 #include <list>
 #include <memory>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 #include "../include/circuit_escape/controllers.hpp"
@@ -265,6 +266,62 @@ int main() {
                 (void)env.step(controller->selectAction(observation, observation.availableActions));
             }
             assert(env.isFinished());
+        }
+    }
+
+    // ===== CONTROLADOR HUMANO E INTERFAZ IController (enunciado 5.6, 5.7 y 6.5) =====
+
+    // Prueba: HumanController devuelve la decisión de la interfaz una sola vez
+    {
+        HumanController human;
+        assert(!human.hasDecision());
+        human.provide(Action::left);
+        assert(human.hasDecision());
+        // Puede devolver una acción no legal: el entorno aplica la regla de movimiento rechazado
+        const std::vector<Action> onlyWait{Action::wait};
+        assert(human.selectAction(Observation{}, onlyWait) == Action::left);
+        assert(!human.hasDecision());
+
+        bool threw = false;
+        try {
+            (void)human.selectAction(Observation{}, allActions);
+        } catch (const std::logic_error&) {
+            threw = true;
+        }
+        assert(threw);
+    }
+
+    // Prueba: una partida humana completa pasando las decisiones por IController
+    {
+        Grid<Cell, 3, 4> g{};
+        g.at({0, 2}) = Exit{};
+        NavigationEnvironment<3, 4> env{g, Position(0, 0), 10, 20};
+        HumanController human;
+        IController& controller = human;  // el juego solo conoce la interfaz
+        StepResult last{};
+        for (Action key : {Action::up, Action::right, Action::right}) {  // up choca con el borde
+            human.provide(key);
+            const Observation observation = env.state();
+            last = env.step(controller.selectAction(observation, observation.availableActions));
+        }
+        assert(last.reason == EndReason::goalReached);
+        assert(last.observation.turn == 3);
+    }
+
+    // Prueba: colección polimórfica de controladores (unique_ptr, sin guardarlos por valor)
+    {
+        std::vector<std::unique_ptr<IController>> controllers;
+        controllers.push_back(std::make_unique<PolicyController<RandomPolicy>>(RandomPolicy{7}));
+        controllers.push_back(std::make_unique<PolicyController<HeuristicPolicy>>(HeuristicPolicy{}));
+        auto human = std::make_unique<HumanController>();
+        human->provide(Action::wait);
+        controllers.push_back(std::move(human));
+
+        const Observation observation = observationAt({0, 0}, {0, 1});
+        const std::vector<Action> legal{Action::down, Action::right, Action::wait};
+        for (const auto& controller : controllers) {
+            const Action chosen = controller->selectAction(observation, legal);  // despacho dinámico
+            assert(std::find(legal.begin(), legal.end(), chosen) != legal.end());
         }
     }
 

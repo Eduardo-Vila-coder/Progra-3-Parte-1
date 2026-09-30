@@ -36,8 +36,10 @@ historial del repositorio (`git log --author="<nombre>"`) y en los pull requests
   `interactions_test.cpp`.
 - Eventos, `std::variant` y templates variádicos: `events.hpp`, `appendEvents`, `holdsAnyOf`,
   `countEvents`, `describe` y `events_test.cpp`.
-- Precondiciones del constructor (`validate`), uso de `CellTraits` en el entorno, iteradores no const y
-  `static_assert` de `Grid`.
+- Precondiciones del constructor (`validate`), `CellTraits` con rasgos transitable y consumible y su uso
+  en el entorno, iteradores no const y `static_assert` de `Grid`.
+- `HumanController`, `GameSession` (ciclo de la partida interactiva, probado en `ui_test`) y pie de la
+  consola con el último evento relevante.
 - Pruebas `grid_test.cpp` y `ui_test.cpp`, y registro de `simulation_test` en CTest.
 - `README.md` y `docs/design.md`.
 
@@ -69,6 +71,6 @@ Los cambios se integraron en `main` mediante pull requests desde ramas por tarea
 ## Uso de herramientas de IA generativa
 
 Algunas partes se desarrollaron con ayuda de asistentes de IA, como se indica en los comentarios del
-código (`[Se usó IA …]`). Las pruebas `grid_test` y `ui_test`, las precondiciones del constructor y la
-documentación se hicieron con asistencia de Claude. Todo el código fue revisado, compilado y probado
+código (`[Se usó IA …]`). Las pruebas `grid_test` y `ui_test`, las precondiciones del constructor,
+`CellTraits`, `HumanController` y la documentación se hicieron con asistencia de Claude. Todo el código fue revisado, compilado y probado
 por el grupo.

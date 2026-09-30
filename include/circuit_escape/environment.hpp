@@ -107,21 +107,23 @@ private:
     // Efecto de la celda a la que acaba de entrar el agente.
     // Se aplica aunque la energía haya quedado en 0 (una batería todavía puede recargar).
     void applyCellEffect(std::vector<NavigationEvent>& events) {
+        // CellTraits (enunciado 6.3): un consumible ya usado se comporta como espacio libre
+        if (isSpent(initialGrid.at(agent_))) {
+            return;
+        }
         std::visit(Overloaded{
             [](Empty&) {},
             [](Wall&) {},          // nunca se entra a un muro
             [](RoughTerrain&) {},  // su costo ya se cobró al entrar
             [](Exit&) {},          // la victoria la decide checkEnd
             [this, &events](ResourceCell<int>& resource) {
-                if (resource.collected) return;          // se recoge una sola vez
-                resource.collected = true;
+                resource.collected = true;               // se recoge una sola vez
                 score_ += rules_.reward;
                 ++collectedResources_;
                 appendEvents(events, ResourceCollectedEvent{agent_, rules_.reward});
             },
             [this, &events](Battery& battery) {
-                if (battery.consumed) return;            // se consume una sola vez
-                battery.consumed = true;
+                battery.consumed = true;                 // se consume una sola vez
                 changeEnergy(rules_.energy, events);
             },
             [this, &events](Trap&) {                     // se activa CADA vez que se entra
@@ -130,17 +132,6 @@ private:
                 score_ -= rules_.scorePenalty;           // el puntaje puede ser negativo
             },
         }, initialGrid.at(agent_));
-    }
-
-    // --- ESPECIALIZACIÓN (enunciado 6.3): CellTraits decide si una celda se puede atravesar ---
-    // std::visit obtiene el tipo concreto de la celda y consulta su rasgo:
-    //   CellTraits<Wall>                 -> especialización TOTAL   (no transitable)
-    //   CellTraits<ResourceCell<Reward>> -> especialización PARCIAL (familia de recursos, transitable)
-    //   el resto                         -> plantilla general       (transitable)
-    static bool isTraversable(const Cell& cell) {
-        return std::visit([](const auto& concrete) {
-            return CellTraits<std::decay_t<decltype(concrete)>>::traversable;
-        }, cell);
     }
 
     // Precondiciones del constructor (enunciado 5.7). Lanza std::invalid_argument si alguna falla.
@@ -188,14 +179,15 @@ private:
 
 public:
     // Constructor: Configura el entorno y verifica las invariantes
+    // (los miembros se inicializan en el mismo orden en que están declarados)
     NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, Position startPos, int startEnergy, std::size_t turnLimit)
-        :  initialGrid(initialGrid), originalGrid_(initialGrid), start(start), agent_(startPos), energy_(startEnergy)
-        , initialEnergy(startEnergy), maxEnergy_(startEnergy), turnLimit(turnLimit) {
+        : initialGrid(initialGrid), start(start), initialEnergy(startEnergy), turnLimit(turnLimit),
+          originalGrid_(initialGrid), agent_(startPos), energy_(startEnergy), maxEnergy_(startEnergy) {
         validate(); // precondiciones e invariantes iniciales (enunciado 5.7)
     }
     NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, int initialEnergy, std::size_t turnLimit)
-        : initialGrid(initialGrid),originalGrid_(initialGrid), agent_(start), energy_(initialEnergy), maxEnergy_(initialEnergy),
-          turnLimit(turnLimit), start(start), initialEnergy(initialEnergy) {     // Constructor original
+        : initialGrid(initialGrid), start(start), initialEnergy(initialEnergy), turnLimit(turnLimit),
+          originalGrid_(initialGrid), agent_(start), energy_(initialEnergy), maxEnergy_(initialEnergy) {     // Constructor original
         validate(); // precondiciones e invariantes iniciales (enunciado 5.7)
     }
 

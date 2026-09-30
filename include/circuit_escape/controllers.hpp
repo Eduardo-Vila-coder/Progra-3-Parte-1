@@ -98,3 +98,19 @@ public:
 private:
     Policy policy_;
 };
+
+// --- CONTROLADOR HUMANO (enunciado 5.6) ---
+// Recibe la decisión que le entrega la interfaz (provide) y la devuelve en selectAction.
+// No lee std::cin: la consola traduce la tecla y se la pasa. Puede devolver una acción no legal
+// (por ejemplo, chocar contra un muro): step la acepta y aplica la regla de movimiento rechazado.
+class HumanController final : public IController {
+public:
+    void provide(Action action) noexcept { pending_ = action; }
+    [[nodiscard]] bool hasDecision() const noexcept { return pending_.has_value(); }
+
+    // Devuelve la decisión pendiente una sola vez. Lanza std::logic_error si la interfaz no entregó ninguna.
+    Action selectAction(const Observation& observation, std::span<const Action> legalActions) override;
+
+private:
+    std::optional<Action> pending_;
+};

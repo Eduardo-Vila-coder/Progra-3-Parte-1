@@ -62,17 +62,18 @@ template <typename... Events, std::input_iterator Iterator, std::sentinel_for<It
 }
 
 // --- std::visit + Overloaded ---
-// Convierte cualquier evento en un texto corto (pensado para el pie de la interfaz de consola).
+// Convierte cualquier evento en un texto corto (pensado para el pie de la interfaz de consola:
+// junto con la ayuda breve debe caber en una terminal de 80 columnas).
 // Si se agrega un tipo nuevo al variant y no se maneja aquí, el programa NO compila:
 // así ningún evento queda sin describir.
 [[nodiscard]] inline std::string describe(const NavigationEvent& event) {
     return std::visit(Overloaded{
         [](const MovedEvent& e) -> std::string {
-            return "Movimiento " + toString(e.from) + " -> " + toString(e.to) +
-                   " (costo " + std::to_string(e.energyCost) + ")";
+            return "Mueve " + toString(e.from) + " -> " + toString(e.to) +
+                   " costo " + std::to_string(e.energyCost);
         },
         [](const MovementRejectedEvent& e) -> std::string {
-            return "Movimiento rechazado hacia " + toString(e.action) + " desde " + toString(e.from);
+            return "Rechazado: " + toString(e.action) + " en " + toString(e.from);
         },
         [](const ResourceCollectedEvent& e) -> std::string {
             return "Recurso +" + std::to_string(e.points) + " en " + toString(e.at);
@@ -81,10 +82,10 @@ template <typename... Events, std::input_iterator Iterator, std::sentinel_for<It
             return "Energia " + std::to_string(e.previous) + " -> " + std::to_string(e.current);
         },
         [](const TrapTriggeredEvent& e) -> std::string {
-            return "Trampa activada en " + toString(e.at);
+            return "Trampa en " + toString(e.at);
         },
         [](const GoalReachedEvent& e) -> std::string {
-            return "Salida alcanzada en " + toString(e.at);
+            return "Salida en " + toString(e.at);
         },
     }, event);
 }
