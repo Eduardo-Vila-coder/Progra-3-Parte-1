@@ -15,7 +15,11 @@
 template <std::size_t Rows, std::size_t Columns>
 class NavigationEnvironment {
 private:
+    // Atributos originales segun el informe
     Grid<Cell, Rows, Columns>  initialGrid;
+    Position start;
+    int initialEnergy;
+    std::size_t turnLimit;
     Grid<Cell, Rows, Columns>  originalGrid_; // Copia del tablero tal como empezó (para reset)
 
     // --- 5.3 AGENTE: Atributos mínimos exigidos ---
@@ -25,10 +29,6 @@ private:
     int score_{0};
     std::size_t collectedResources_{0};
     bool active_{true};
-    std::size_t turnLimit;
-
-    Position start; // Atributo original segun el informe
-    int initialEnergy; // Atributo original segun el informe
     std::uint32_t seed_{0}; // Semilla del último reset (simulación reproducible)
 
     std::size_t turn_{0};
@@ -163,13 +163,8 @@ public:
         if (std::holds_alternative<Wall>(initialGrid.at(agent_))) {
             throw std::invalid_argument("Error: El agente inicia dentro de un muro");
         }
+    
     }
-
-
-    NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, int initialEnergy, std::size_t turnLimit)
-        : initialGrid(initialGrid),originalGrid_(initialGrid), agent_(start), energy_(initialEnergy), maxEnergy_(initialEnergy),
-          turnLimit(turnLimit), start(start), initialEnergy(initialEnergy) {}     // Constructor original
-
     // Constructor que recibe cualquier perfil de Eduardo: GameRules<Easy>, <Standard> o <Hard>.
     // Toma del perfil la energía inicial/máxima y el límite de turnos, y copia sus costos y recompensas.
     template <Difficulty Level>
@@ -298,7 +293,9 @@ public:
         return StepResult{state(), std::move(events), isFinished(), endReason_};
     }
 
-    [[nodiscard]] const Grid<Cell, Rows, Columns>& grid() const noexcept {}
+    [[nodiscard]] const Grid<Cell, Rows, Columns>& grid() const noexcept {
+        return initialGrid;
+    }
 
 };
 

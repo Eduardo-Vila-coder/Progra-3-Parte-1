@@ -37,6 +37,7 @@ add_executable(navigation_game
         include/circuit_escape/cells.hpp
         include/circuit_escape/controllers.hpp
         include/circuit_escape/environment.hpp
+        include/circuit_escape/game_rules.hpp
         include/circuit_escape/grid.hpp
         include/circuit_escape/observation.hpp
         include/circuit_escape/position.hpp
