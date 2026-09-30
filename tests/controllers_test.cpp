@@ -15,6 +15,17 @@ Observation observationAt(Position agent, Position goal) {
     return observation;
 }
 
+// ===== CONCEPT NavigationPolicy (se comprueba en compilación) =====
+// (RandomPolicy y HeuristicPolicy ya se comprueban con static_assert en controllers.hpp)
+// Tipos que NO cumplen el contrato:
+struct PolicyWithoutSelectAction {};
+struct PolicyReturningInt {
+    int selectAction(const Observation&, std::span<const Action>) { return 0; }
+};
+static_assert(!NavigationPolicy<int>);
+static_assert(!NavigationPolicy<PolicyWithoutSelectAction>);
+static_assert(!NavigationPolicy<PolicyReturningInt>); // devuelve int, no Action
+
 int main() {
     const std::vector<Action> allActions{Action::up, Action::down, Action::left, Action::right, Action::wait};
 
