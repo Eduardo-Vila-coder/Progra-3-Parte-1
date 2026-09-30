@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 #include "cells.hpp"
+#include "events.hpp"
 #include "game_rules.hpp"
 #include "grid.hpp"
 #include "observation.hpp"
@@ -62,7 +63,7 @@ private:
         active_ = false; // La partida terminó: el agente ya no puede actuar
 
         if (endReason_ == EndReason::goalReached) {
-            events.emplace_back(GoalReachedEvent{agent_});
+            appendEvents(events, GoalReachedEvent{agent_});
         }
     }
 
@@ -165,6 +166,10 @@ public:
         }
     
     }
+    NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, int initialEnergy, std::size_t turnLimit)
+        : initialGrid(initialGrid),originalGrid_(initialGrid), agent_(start), energy_(initialEnergy), maxEnergy_(initialEnergy),
+          turnLimit(turnLimit), start(start), initialEnergy(initialEnergy) {}     // Constructor original (restaurado: se perdió en el merge 1e87172)
+
     // Constructor que recibe cualquier perfil de Eduardo: GameRules<Easy>, <Standard> o <Hard>.
     // Toma del perfil la energía inicial/máxima y el límite de turnos, y copia sus costos y recompensas.
     template <Difficulty Level>
