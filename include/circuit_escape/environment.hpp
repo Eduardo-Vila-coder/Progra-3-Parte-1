@@ -168,6 +168,16 @@ public:
         : initialGrid(initialGrid), agent_(start), energy_(initialEnergy), maxEnergy_(initialEnergy),
           turnLimit(turnLimit), start(start), initialEnergy(initialEnergy) {}     // Constructor original
 
+    // Constructor que recibe cualquier perfil de Eduardo: GameRules<Easy>, <Standard> o <Hard>.
+    // Toma del perfil la energía inicial/máxima y el límite de turnos, y copia sus costos y recompensas.
+    template <Difficulty Level>
+    NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, GameRules<Level> rules)
+        : NavigationEnvironment(initialGrid, start, rules.initialMaxEnergy, rules.turnLimit) {
+        rules_ = {rules.initialMaxEnergy, rules.turnLimit, rules.energyCostGeneral,
+                  rules.energyCostRoughTerrain, rules.energyCostOthers, rules.reward,
+                  rules.energy, rules.energyPenalty, rules.scorePenalty};
+    }
+
     // Métodos para consultar el estado del agente
     Position getAgentPosition() const { return agent_; }
     int getEnergy() const { return energy_; }
@@ -274,3 +284,15 @@ public:
     [[nodiscard]] const Grid<Cell, Rows, Columns>& grid() const noexcept {}
 
 };
+
+// Crea el entorno con la dificultad elegida al ejecutar (por ejemplo, desde --difficulty en la consola).
+// Es el único lugar donde se decide según el nivel; el entorno solo recibe las reglas.
+template <std::size_t Rows, std::size_t Columns>
+NavigationEnvironment<Rows, Columns> makeEnvironment(Grid<Cell, Rows, Columns> grid, Position start,
+                                                     Difficulty difficulty) {
+    switch (difficulty) {
+    case Difficulty::Easy: return NavigationEnvironment<Rows, Columns>{grid, start, GameRules<Difficulty::Easy>{}};
+    case Difficulty::Hard: return NavigationEnvironment<Rows, Columns>{grid, start, GameRules<Difficulty::Hard>{}};
+    default:               return NavigationEnvironment<Rows, Columns>{grid, start, GameRules<Difficulty::Standard>{}};
+    }
+}
