@@ -20,6 +20,7 @@ private:
     Position start;
     int initialEnergy;
     std::size_t turnLimit;
+    Grid<Cell, Rows, Columns>  originalGrid_; // Copia del tablero tal como empezó (para reset)
 
     // --- 5.3 AGENTE: Atributos mínimos exigidos ---
     Position agent_;
@@ -28,6 +29,7 @@ private:
     int score_{0};
     std::size_t collectedResources_{0};
     bool active_{true};
+    std::uint32_t seed_{0}; // Semilla del último reset (simulación reproducible)
 
     std::size_t turn_{0};
 
@@ -149,7 +151,7 @@ private:
 public:
     // Constructor: Configura el entorno y verifica las invariantes
     NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, Position startPos, int startEnergy, std::size_t turnLimit)
-        :  initialGrid(initialGrid), start(start), agent_(startPos), initialEnergy(startEnergy) , energy_(startEnergy), maxEnergy_(startEnergy), turnLimit(turnLimit) {
+        :  initialGrid(initialGrid), originalGrid_(initialGrid), start(start), agent_(startPos), energy_(startEnergy), maxEnergy_(startEnergy), turnLimit(turnLimit) {
 
         // INVARIANTE: La posición del agente siempre pertenece al tablero
         if (! initialGrid.contains(agent_)) {
@@ -161,6 +163,16 @@ public:
         if (std::holds_alternative<Wall>(initialGrid.at(agent_))) {
             throw std::invalid_argument("Error: El agente inicia dentro de un muro");
         }
+    
+    }
+    // Constructor que recibe cualquier perfil de Eduardo: GameRules<Easy>, <Standard> o <Hard>.
+    // Toma del perfil la energía inicial/máxima y el límite de turnos, y copia sus costos y recompensas.
+    template <Difficulty Level>
+    NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, GameRules<Level> rules)
+        : NavigationEnvironment(initialGrid, start, rules.initialMaxEnergy, rules.turnLimit) {
+        rules_ = {rules.initialMaxEnergy, rules.turnLimit, rules.energyCostGeneral,
+                  rules.energyCostRoughTerrain, rules.energyCostOthers, rules.reward,
+                  rules.energy, rules.energyPenalty, rules.scorePenalty};
     }
 
     // Métodos para consultar el estado del agente
@@ -173,7 +185,22 @@ public:
 
     // Metodos descritos en el informe
 
-    void reset(std::uint32_t seed) {}
+    // Vuelve la partida a su estado inicial: tablero original (recursos y baterías disponibles otra vez),
+    // agente en el inicio, energía máxima, puntaje, recursos y turno en cero. Las reglas no cambian.
+    // La semilla se guarda para que la simulación sepa con qué semilla se reinició.
+    void reset(std::uint32_t seed) {
+        seed_ = seed;
+        initialGrid = originalGrid_;
+        agent_ = start;
+        energy_ = maxEnergy_;
+        score_ = 0;
+        collectedResources_ = 0;
+        turn_ = 0;
+        active_ = true;
+        endReason_ = EndReason::none;
+    }
+
+    [[nodiscard]] std::uint32_t seed() const noexcept { return seed_; }
 
     [[nodiscard]] Observation state() const {
         return Observation{agent_, goalPosition(), energy_, maxEnergy_, score_,
@@ -271,3 +298,15 @@ public:
     }
 
 };
+
+// Crea el entorno con la dificultad elegida al ejecutar (por ejemplo, desde --difficulty en la consola).
+// Es el único lugar donde se decide según el nivel; el entorno solo recibe las reglas.
+template <std::size_t Rows, std::size_t Columns>
+NavigationEnvironment<Rows, Columns> makeEnvironment(Grid<Cell, Rows, Columns> grid, Position start,
+                                                     Difficulty difficulty) {
+    switch (difficulty) {
+    case Difficulty::Easy: return NavigationEnvironment<Rows, Columns>{grid, start, GameRules<Difficulty::Easy>{}};
+    case Difficulty::Hard: return NavigationEnvironment<Rows, Columns>{grid, start, GameRules<Difficulty::Hard>{}};
+    default:               return NavigationEnvironment<Rows, Columns>{grid, start, GameRules<Difficulty::Standard>{}};
+    }
+}

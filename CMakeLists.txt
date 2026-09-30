@@ -27,6 +27,9 @@ add_library(circuit_escape_core
         src/environment.cpp
         src/controllers.cpp
 )
+# Ruta absoluta de los mapas: los escenarios se cargan igual desde cualquier carpeta de compilación
+target_compile_definitions(circuit_escape_core PUBLIC
+        CIRCUIT_ESCAPE_MAPS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/maps")
 
 # Aplicación ejecutable principal (app/main.cpp)
 add_executable(navigation_game
@@ -60,3 +63,7 @@ add_test(NAME InteractionsTest COMMAND interactions_test)
 add_executable(controllers_test tests/controllers_test.cpp)
 target_link_libraries(controllers_test PRIVATE circuit_escape_core)
 add_test(NAME ControllersTest COMMAND controllers_test)
+
+add_executable(scenarios_test tests/scenarios_test.cpp)
+target_link_libraries(scenarios_test PRIVATE circuit_escape_core)
+add_test(NAME ScenariosTest COMMAND scenarios_test)
