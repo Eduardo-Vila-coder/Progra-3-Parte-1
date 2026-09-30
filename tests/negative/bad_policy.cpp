@@ -2,7 +2,7 @@
 // Este archivo NO debe compilar: a propósito NO está en CMakeLists.txt.
 // Muestra el diagnóstico del compilador cuando una política no satisface el concept NavigationPolicy.
 // Para verlo (desde la raíz del proyecto):
-//   g++ -std=c++20 -Iinclude -c tests/negative/concept_negative.cpp -o NUL
+//   g++ -std=c++20 -Iinclude -fsyntax-only tests/negative/bad_policy.cpp
 #include "../../include/circuit_escape/environment.hpp"
 #include "../../include/circuit_escape/simulation.hpp"
 

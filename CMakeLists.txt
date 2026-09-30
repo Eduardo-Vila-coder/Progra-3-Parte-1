@@ -15,6 +15,11 @@ include_directories(include)
 
 # Integración de FTXUI fijada a una versión concreta (enunciado, sección 5.8)
 include(FetchContent)
+# Si existe una copia local de FTXUI en external/ftxui (carpeta ignorada por git), se usa esa
+# en lugar de descargarla. Útil sin internet o con una conexión lenta a GitHub.
+if(NOT FETCHCONTENT_SOURCE_DIR_FTXUI AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/ftxui/CMakeLists.txt")
+    set(FETCHCONTENT_SOURCE_DIR_FTXUI "${CMAKE_CURRENT_SOURCE_DIR}/external/ftxui")
+endif()
 FetchContent_Declare(ftxui
         GIT_REPOSITORY https://github.com/ArthurSonzogni/FTXUI
         GIT_TAG v7.0.3
@@ -74,3 +79,12 @@ add_test(NAME ScenariosTest COMMAND scenarios_test)
 add_executable(events_test tests/events_test.cpp)
 target_link_libraries(events_test PRIVATE circuit_escape_core)
 add_test(NAME EventsTest COMMAND events_test)
+
+add_executable(simulation_test tests/simulation_test.cpp)
+target_link_libraries(simulation_test PRIVATE circuit_escape_core)
+add_test(NAME SimulationTest COMMAND simulation_test)
+
+# La prueba de la interfaz es la única que se enlaza con FTXUI (a través de circuit_escape_ui)
+add_executable(ui_test tests/ui_test.cpp)
+target_link_libraries(ui_test PRIVATE circuit_escape_ui)
+add_test(NAME UiTest COMMAND ui_test)

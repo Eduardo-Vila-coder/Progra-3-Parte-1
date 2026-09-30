@@ -1,14 +1,19 @@
 #pragma once
 #include <array>
+#include <cstddef>
 #include <iostream>
+#include <stdexcept>
 #include "position.hpp"
 
 template <typename CellType, size_t Rows, size_t Columns>
 class Grid
 {
+    // Un tablero sin filas o sin columnas no tiene sentido: se rechaza al compilar (enunciado 5.7)
+    static_assert(Rows > 0 && Columns > 0, "Grid necesita al menos una fila y una columna");
+
 public:
     using value_type = CellType;
-    using iterator = std::array<CellType, Rows * Columns>::const_iterator; //? iterador para hacer cambios
+    using iterator = std::array<CellType, Rows * Columns>::iterator; //? iterador para hacer cambios
     using const_iterator = std::array<CellType, Rows * Columns>::const_iterator; //? iterador para la lectura de los elememntos
     static constexpr size_t rows() noexcept { return Rows; }
     static constexpr size_t columns() noexcept { return Columns; }
