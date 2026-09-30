@@ -1,5 +1,8 @@
 #pragma once
+#include <algorithm>
 #include <cstdint>
+#include <iterator>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 #include "cells.hpp"
@@ -25,7 +28,49 @@ private:
     Position start; // Atributo original segun el informe
     int initialEnergy; // Atributo original segun el informe
 
-    int turn_{0};
+    std::size_t turn_{0};
+
+    // --- CONDICIONES DE TÉRMINO ---
+    // Motivo por el que terminó la partida (none = sigue activa)
+    EndReason endReason_{EndReason::none};
+
+    // Evalúa las condiciones de término respetando la precedencia del enunciado:
+    // goalReached (en la salida y con energía) > noEnergy > turnLimit
+    EndReason evaluateEnd() const {
+        if (std::holds_alternative<Exit>(initialGrid.at(agent_)) && energy_ > 0) {
+            return EndReason::goalReached;
+        }
+        if (energy_ == 0) {
+            return EndReason::noEnergy;
+        }
+        if (turn_ >= turnLimit) {
+            return EndReason::turnLimit;
+        }
+        return EndReason::none;
+    }
+
+    // Se llama al final de step, después de aplicar los efectos de la celda destino
+    void checkEnd(std::vector<NavigationEvent>& events) {
+        endReason_ = evaluateEnd();
+        if (endReason_ == EndReason::none) {
+            return;
+        }
+
+        active_ = false; // La partida terminó: el agente ya no puede actuar
+
+        if (endReason_ == EndReason::goalReached) {
+            events.emplace_back(GoalReachedEvent{agent_});
+        }
+    }
+
+    // Busca la posición de la salida recorriendo el tablero en orden por filas
+    Position goalPosition() const {
+        auto it = std::find_if(initialGrid.begin(), initialGrid.end(), [](const Cell& cell) {
+            return std::holds_alternative<Exit>(cell);
+        });
+        std::size_t index = static_cast<std::size_t>(std::distance(initialGrid.begin(), it));
+        return Position{index / Columns, index % Columns};
+    }
 
     // INVARIANTE: La energía se mantiene entre el Mín y Máx
     void changeEnergy(int amount) {
@@ -75,7 +120,8 @@ public:
 
 
     NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, int initialEnergy, std::size_t turnLimit)
-        : initialGrid(initialGrid), start(start), initialEnergy(initialEnergy), turnLimit(turnLimit) {}     // Constructor original
+        : initialGrid(initialGrid), agent_(start), energy_(initialEnergy), maxEnergy_(initialEnergy),
+          turnLimit(turnLimit), start(start), initialEnergy(initialEnergy) {}     // Constructor original
 
     // Métodos para consultar el estado del agente
     Position getAgentPosition() const { return agent_; }
@@ -87,16 +133,24 @@ public:
 
     void reset(std::uint32_t seed) {}
 
-    [[nodiscard]] Observation state() const {}
+    [[nodiscard]] Observation state() const {
+        return Observation{agent_, goalPosition(), energy_, maxEnergy_, score_,
+                           collectedResources_, turn_, availableActions()};
+    }
 
     [[nodiscard]] std::vector<Action> availableActions() const {
         std::vector<Action> actions;
+
+        // Después del término no hay acciones legales
+        if (isFinished()) {
+            return actions;
+        }
 
         // Iteramos sobre cada accion existente [se usó IA para saber cómo iterar sobre Enum]
         for (std::size_t i = 0; i <= 4; i++) {
             Action action = static_cast<Action>(i);
 
-            std::optional<Position> optionalPosition{neighbor(start, action)};  // Cambiar start por la posicion del agente
+            std::optional<Position> optionalPosition{neighbor(agent_, action)};
 
             // Ignoramos la accion si esta produce una posicion con indices negativos
             if (!optionalPosition.has_value()) {
@@ -124,18 +178,18 @@ public:
         return actions;
     }
 
-    [[nodiscard]] bool isFinished() const noexcept {}
+    [[nodiscard]] bool isFinished() const noexcept {
+        return endReason_ != EndReason::none;
+    }
 
     [[nodiscard]] StepResult step(Action action) {
+        // INVARIANTE: Un agente sin energía no puede ejecutar otra acción
+        // (con energía 0 la partida termina por noEnergy y se lanza esta excepción)
         if (!active_) {
             throw std::logic_error("Error: la partida ya termino");
         }
 
-        // INVARIANTE: Un agente sin energía no puede ejecutar otra acción
-        if (energy_ == 0) {
-            active_ = false; // Se desactiva el agente
-            return;          // Sale de la función sin ejecutar el turno
-        }
+        std::vector<NavigationEvent> events;
 
         //Incrementamos el turno
         turn_++;
@@ -167,7 +221,10 @@ public:
             energy_ = 0;
         }
 
-        //MATHIAS AÑADIRÁ SU CÓDIGO DE CONDICIONES DE TÉRMINO (checkEnd)
+        // Comprobamos las condiciones de término (último paso de la resolución)
+        checkEnd(events);
+
+        return StepResult{state(), std::move(events), isFinished(), endReason_};
     }
 
     [[nodiscard]] const Grid<Cell, Rows, Columns>& grid() const noexcept {}

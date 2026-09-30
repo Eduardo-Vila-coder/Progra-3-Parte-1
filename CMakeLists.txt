@@ -8,8 +8,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Indicar a CMake dónde buscar las cabeceras (.hpp)
 include_directories(include)
 
-# Integración de FTXUI local (sin bloqueos de red)
-add_subdirectory(external/ftxui)
+# Integración de FTXUI fijada a una versión concreta (enunciado, sección 5.8)
+include(FetchContent)
+FetchContent_Declare(ftxui
+        GIT_REPOSITORY https://github.com/ArthurSonzogni/FTXUI
+        GIT_TAG v7.0.3
+        GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(ftxui)
 
 # Biblioteca central (Core)
 add_library(circuit_escape_core
@@ -21,8 +27,6 @@ add_library(circuit_escape_core
         src/environment.cpp
         src/controllers.cpp
 )
-# Vinculamos FTXUI a la librería core
-target_link_libraries(circuit_escape_core PUBLIC ftxui::screen ftxui::dom ftxui::component)
 
 # Aplicación ejecutable principal (app/main.cpp)
 add_executable(navigation_game
@@ -34,7 +38,8 @@ add_executable(navigation_game
         include/circuit_escape/observation.hpp
         include/circuit_escape/position.hpp
 )
-target_link_libraries(navigation_game PRIVATE circuit_escape_core)
+# FTXUI se limita al ejecutable (capa de presentación); el core y las pruebas no dependen de ella
+target_link_libraries(navigation_game PRIVATE circuit_escape_core ftxui::screen ftxui::dom ftxui::component)
 
 # Pruebas Unitarias explícitas (tests/)
 enable_testing()

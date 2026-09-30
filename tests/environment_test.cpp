@@ -57,5 +57,111 @@ int main() {
     assert(g3.energyPenalty == 3);
     assert(g3.scorePenalty == 2);
 
+    // ===== CONDICIONES DE TÉRMINO (tableros 3x4) =====
+
+    // Prueba 1 (término): Llegar a la salida con energía termina la partida por goalReached
+    {
+        Grid<Cell, 3, 4> g{};
+        g.at({0, 1}) = Exit{};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), 10, 20};
+        StepResult r = e.step(Action::right);
+        assert(r.finished);
+        assert(r.reason == EndReason::goalReached);
+        assert(e.isFinished());
+        assert(r.observation.agent == Position(0, 1));
+        assert(r.observation.goal == Position(0, 1));
+        assert(r.observation.energy == 9);
+        assert(r.observation.turn == 1);
+        assert(!r.events.empty());
+        assert(std::holds_alternative<GoalReachedEvent>(r.events.back()));
+        assert(std::get<GoalReachedEvent>(r.events.back()).at == Position(0, 1));
+    }
+
+    // Prueba 2 (término): La energía llega a cero termina la partida por noEnergy
+    {
+        Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), 2, 50};
+        StepResult r1 = e.step(Action::right);
+        assert(!r1.finished);
+        assert(r1.reason == EndReason::none);
+        assert(!e.isFinished());
+        StepResult r2 = e.step(Action::right);
+        assert(r2.finished);
+        assert(r2.reason == EndReason::noEnergy);
+        assert(r2.observation.energy == 0);
+    }
+
+    // Prueba 3 (término): Alcanzar el límite de turnos termina la partida por turnLimit
+    {
+        Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), 50, 2};
+        StepResult r1 = e.step(Action::wait);
+        assert(!r1.finished);
+        StepResult r2 = e.step(Action::wait);
+        assert(r2.finished);
+        assert(r2.reason == EndReason::turnLimit);
+        assert(r2.observation.turn == 2);
+    }
+
+    // Prueba 4 (precedencia): Llegar a la salida con energía 0 NO es victoria -> noEnergy
+    {
+        Grid<Cell, 3, 4> g{};
+        g.at({0, 1}) = Exit{};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), 1, 20};
+        StepResult r = e.step(Action::right);
+        assert(r.finished);
+        assert(r.reason == EndReason::noEnergy);
+        for (const NavigationEvent& event : r.events) {
+            assert(!std::holds_alternative<GoalReachedEvent>(event));
+        }
+    }
+
+    // Prueba 5 (precedencia): Llegar a la salida con energía en el último turno SÍ es victoria
+    {
+        Grid<Cell, 3, 4> g{};
+        g.at({0, 2}) = Exit{};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), 10, 2};
+        StepResult r1 = e.step(Action::right);
+        assert(!r1.finished);
+        StepResult r2 = e.step(Action::right);
+        assert(r2.finished);
+        assert(r2.reason == EndReason::goalReached);
+    }
+
+    // Prueba 6 (precedencia): Energía agotada en el último turno -> noEnergy antes que turnLimit
+    {
+        Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), 1, 1};
+        StepResult r = e.step(Action::wait);
+        assert(r.finished);
+        assert(r.reason == EndReason::noEnergy);
+    }
+
+    // Prueba 7 (término): step después de terminar lanza std::logic_error
+    // y no hay acciones disponibles
+    {
+        Grid<Cell, 3, 4> g{};
+        g.at({0, 1}) = Exit{};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), 10, 20};
+        StepResult r = e.step(Action::right);
+        assert(r.finished);
+        assert(e.availableActions().empty());
+        assert(e.state().availableActions.empty());
+        assert(r.observation.availableActions.empty());
+
+        bool threw = false;
+        try {
+            (void)e.step(Action::left);
+        } catch (const std::logic_error&) {
+            threw = true;
+        }
+        assert(threw);
+        assert(e.state().turn == 1); // El intento rechazado no consumió turno
+    }
+
+    std::cout << "environment_test: todas las pruebas pasaron\n";
     return 0;
 }
