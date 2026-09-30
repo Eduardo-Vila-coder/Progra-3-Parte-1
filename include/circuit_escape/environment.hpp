@@ -11,7 +11,11 @@
 template <std::size_t Rows, std::size_t Columns>
 class NavigationEnvironment {
 private:
+    // Atributos originales segun el informe
     Grid<Cell, Rows, Columns>  initialGrid;
+    Position start;
+    int initialEnergy;
+    std::size_t turnLimit;
 
     // --- 5.3 AGENTE: Atributos mínimos exigidos ---
     Position agent_;
@@ -20,11 +24,6 @@ private:
     int score_{0};
     std::size_t collectedResources_{0};
     bool active_{true};
-    std::size_t turnLimit;
-
-    Position start; // Atributo original segun el informe
-    int initialEnergy; // Atributo original segun el informe
-
     int turn_{0};
 
     // INVARIANTE: La energía se mantiene entre el Mín y Máx
