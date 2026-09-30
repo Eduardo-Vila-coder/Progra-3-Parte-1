@@ -15,7 +15,7 @@ consola (FTXUI) o dejar que juegue un controlador automático, y todas las regla
 | Yerik Dylan Vega Santillan | _(completar)_ | [Yerik-Vega](https://github.com/Yerik-Vega) |
 | Cristhian Gabriel Jinchuña Cama | _(completar)_ | [cristhianjinchuna-dev](https://github.com/cristhianjinchuna-dev) |
 | Mathias Alonso Cavalcanti Estacio | _(completar)_ | [MatCavUTEC](https://github.com/MatCavUTEC) |
-| Mathius Edgar Quispe Sicha | _(completar)_ | [hfuv](https://github.com/hfuv) (MQS144) |
+| Mathius Edgar Quispe Sicha | 202520058 | [hfuv](https://github.com/hfuv) (MQS144) |
 
 Qué hizo cada integrante: [`docs/contributions.md`](docs/contributions.md).
 Decisiones de diseño y dónde se aplica cada tema: [`docs/design.md`](docs/design.md).
