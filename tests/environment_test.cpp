@@ -24,6 +24,23 @@ int main() {
     std::vector<Action> availableActions3{Action::left, Action::right, Action::wait};
     assert(availableActions3 == env3.availableActions());
 
+    // Prueba 1 (realizacion movimiento): Un agente en (0, 0) debe ser capaz de realizar el movimiento down
+    auto d = env.step(Action::down);
+    assert((env.getAgentPosition() == Position{1, 0}));
+
+    // Prueba 2 (realizacion movimiento): Un agente en (19, 29) no debe ser capaz de realizar el movimiento right
+    auto posicionAnterior = env2.getAgentPosition();
+    auto energiaAnterior = env2.getEnergy();
+    d = env2.step(Action::right);
+    assert(posicionAnterior == env2.getAgentPosition() && energiaAnterior - 1 == env2.getEnergy());
+
+    // Prueba 3 (realizacion movimiento): Un agente en (10, 10) en un mapa con Walls en (9, 10) y (11, 10)
+    // no debe ser capaz de realizar el movimiento up
+    posicionAnterior = env3.getAgentPosition();
+    energiaAnterior = env3.getEnergy();
+    d = env3.step(Action::up);
+    assert(posicionAnterior == env3.getAgentPosition() && energiaAnterior - 1 == env3.getEnergy());
+
     // Prueba 1 (carga perfiles): Dificultad estandar
     auto g1 = GameRules<Difficulty::Standard>{};
     assert(g1.initialMaxEnergy == 60);
