@@ -6,6 +6,7 @@
 #include <optional>
 #include <random>
 #include <span>
+#include <utility>
 #include "observation.hpp"
 #include "position.hpp"
 
@@ -71,3 +72,29 @@ private:
 
 static_assert(NavigationPolicy<RandomPolicy>);
 static_assert(NavigationPolicy<HeuristicPolicy>);
+
+// --- INTERFAZ POLIMÓRFICA (enunciado 5.7 y 6.5) ---
+// Interfaz común para los controladores automáticos. El juego guarda un std::unique_ptr<IController>
+// y llama a selectAction sin saber qué controlador es: el despacho dinámico ocurre en la llamada virtual.
+// No se usa typeid, dynamic_cast ni condicionales según el tipo de controlador (enunciado 9).
+class IController {
+public:
+    virtual ~IController() = default;
+    virtual Action selectAction(const Observation& observation, std::span<const Action> legalActions) = 0;
+};
+
+// --- ADAPTADOR GENÉRICO (enunciado 5.7 y 6.5) ---
+// Convierte cualquier política que cumpla el concept NavigationPolicy (se verifica al compilar)
+// en un IController (se puede cambiar en ejecución). Las políticas no heredan de nada.
+template <NavigationPolicy Policy>
+class PolicyController final : public IController {
+public:
+    explicit PolicyController(Policy policy) : policy_(std::move(policy)) {}
+
+    Action selectAction(const Observation& observation, std::span<const Action> legalActions) override {
+        return policy_.selectAction(observation, legalActions);
+    }
+
+private:
+    Policy policy_;
+};

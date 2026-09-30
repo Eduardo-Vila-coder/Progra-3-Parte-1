@@ -2,6 +2,7 @@
 #include <cassert>
 #include <iostream>
 #include <list>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 #include "../include/circuit_escape/controllers.hpp"
@@ -226,6 +227,45 @@ int main() {
             }
         }
         assert(env.isFinished());
+    }
+
+    // ===== INTERFAZ POLIMÓRFICA IController + ADAPTADOR PolicyController =====
+
+    // Prueba 19: A través de IController (despacho dinámico) se obtiene lo mismo que con la política directa
+    {
+        std::unique_ptr<IController> randomController =
+            std::make_unique<PolicyController<RandomPolicy>>(RandomPolicy{99});
+        RandomPolicy direct{99};
+        for (int i = 0; i < 50; ++i) {
+            assert(randomController->selectAction(Observation{}, allActions) ==
+                   direct.selectAction(Observation{}, allActions));
+        }
+
+        std::unique_ptr<IController> heuristicController =
+            std::make_unique<PolicyController<HeuristicPolicy>>(HeuristicPolicy{});
+        assert(heuristicController->selectAction(observationAt(Position(1, 1), Position(1, 3)), allActions) ==
+               Action::right);
+    }
+
+    // Prueba 20: Los controladores se intercambian en ejecución sin modificar el entorno:
+    // el mismo código juega con cualquiera de ellos y ambas partidas terminan
+    {
+        Grid<Cell, 3, 4> g{};
+        g.at({1, 1}) = Wall{};
+        g.at({2, 3}) = Exit{};
+
+        std::vector<std::unique_ptr<IController>> controllers;
+        controllers.push_back(std::make_unique<PolicyController<RandomPolicy>>(RandomPolicy{5}));
+        controllers.push_back(std::make_unique<PolicyController<HeuristicPolicy>>(HeuristicPolicy{}));
+
+        for (const auto& controller : controllers) {
+            NavigationEnvironment<3, 4> env{g, Position(0, 0), 30, 40};
+            while (!env.isFinished()) {
+                Observation observation = env.state();
+                (void)env.step(controller->selectAction(observation, observation.availableActions));
+            }
+            assert(env.isFinished());
+        }
     }
 
     std::cout << "controllers_test: todas las pruebas pasaron\n";
