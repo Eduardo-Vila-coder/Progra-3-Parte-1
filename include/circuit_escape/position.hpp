@@ -23,7 +23,8 @@ enum class Action
 
 //* se calcula la posicion adyacente a partir de un punto al tratar de realizar una accion de movimiento
 // usos de std::nullopt // sirve para indicar que se llego a un valor invalido en este caso
-std::optional<Position> neighbor(Position origin, Action action)
+// inline: permite incluir este header en varios .cpp sin error de "multiple definition" al enlazar
+inline std::optional<Position> neighbor(Position origin, Action action)
 {
     //! segun lo revisado se puede hacer mediante switch para una comprobacion directa y ademas que ofrece advertencias del compilador
     switch (action)
@@ -52,7 +53,7 @@ std::optional<Position> neighbor(Position origin, Action action)
 }
 
 
-std::string toString(Position position)
+inline std::string toString(Position position)
 {
     //? uso del std::to_string para la conversion de valores numericos a string
     return "("+ std::to_string(position.row)+ "," + std::to_string(position.column)+")" ;
