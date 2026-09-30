@@ -12,10 +12,10 @@ consola (FTXUI) o dejar que juegue un controlador automático, y todas las regla
 | Nombre | Código | Usuario de GitHub |
 |---|---|---|
 | Eduardo Raúl Vila Castellares | _(completar)_ | [Eduardo-Vila-coder](https://github.com/Eduardo-Vila-coder) |
-| Yerik Vega | _(completar)_ | [Yerik-Vega](https://github.com/Yerik-Vega) |
+| Yerik Dylan Vega Santillan | _(completar)_ | [Yerik-Vega](https://github.com/Yerik-Vega) |
 | Cristhian Gabriel Jinchuña Cama | _(completar)_ | [cristhianjinchuna-dev](https://github.com/cristhianjinchuna-dev) |
-| Mathias Cavalcanti | _(completar)_ | [MatCavUTEC](https://github.com/MatCavUTEC) |
-| _(completar)_ | _(completar)_ | [hfuv](https://github.com/hfuv) (MQS144) |
+| Mathias Alonso Cavalcanti Estacio | _(completar)_ | [MatCavUTEC](https://github.com/MatCavUTEC) |
+| Mathius Edgar Quispe Sicha | _(completar)_ | [hfuv](https://github.com/hfuv) (MQS144) |
 
 Qué hizo cada integrante: [`docs/contributions.md`](docs/contributions.md).
 Decisiones de diseño y dónde se aplica cada tema: [`docs/design.md`](docs/design.md).
