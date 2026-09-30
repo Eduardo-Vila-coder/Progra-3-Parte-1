@@ -9,6 +9,7 @@
 #include "game_rules.hpp"
 #include "grid.hpp"
 #include "observation.hpp"
+#include "overloaded.hpp"
 #include "position.hpp"
 
 template <std::size_t Rows, std::size_t Columns>
@@ -72,15 +73,59 @@ private:
         return Position{index / Columns, index % Columns};
     }
 
-    // INVARIANTE: La energía se mantiene entre el Mín y Máx
-    void changeEnergy(int amount) {
-        energy_ += amount;
+    // --- ENERGÍA E INTERACCIONES (Cristhian) ---
+    // Reglas de la partida (costos, recompensas, penalizaciones). Por ahora estándar.
+    GameRules<> rules_{};
 
-        if (energy_ < 0) {
-            energy_ = 0;
-        } else if (energy_ > maxEnergy_) {
-            energy_ = maxEnergy_;
+    // INVARIANTE: La energía se mantiene entre 0 y maxEnergy_.
+    // Solo se emite EnergyChangedEvent si la energía cambió de verdad.
+    void changeEnergy(int delta, std::vector<NavigationEvent>& events) {
+        const int previous = energy_;
+        energy_ = std::clamp(energy_ + delta, 0, maxEnergy_);
+        if (energy_ != previous) {
+            appendEvents(events, EnergyChangedEvent{previous, energy_});
         }
+    }
+
+    // Gastar energía es cambiarla en negativo
+    void spendEnergy(int cost, std::vector<NavigationEvent>& events) {
+        changeEnergy(-cost, events);
+    }
+
+    // Costo de entrar a una celda: el terreno elevado cuesta más, el resto cuesta lo general
+    int entryCost(const Cell& cell) const {
+        return std::visit(Overloaded{
+            [this](const RoughTerrain&) { return rules_.energyCostRoughTerrain; },
+            [this](const auto&) { return rules_.energyCostGeneral; },
+        }, cell);
+    }
+
+    // Efecto de la celda a la que acaba de entrar el agente.
+    // Se aplica aunque la energía haya quedado en 0 (una batería todavía puede recargar).
+    void applyCellEffect(std::vector<NavigationEvent>& events) {
+        std::visit(Overloaded{
+            [](Empty&) {},
+            [](Wall&) {},          // nunca se entra a un muro
+            [](RoughTerrain&) {},  // su costo ya se cobró al entrar
+            [](Exit&) {},          // la victoria la decide checkEnd
+            [this, &events](ResourceCell<int>& resource) {
+                if (resource.collected) return;          // se recoge una sola vez
+                resource.collected = true;
+                score_ += rules_.reward;
+                ++collectedResources_;
+                appendEvents(events, ResourceCollectedEvent{agent_, rules_.reward});
+            },
+            [this, &events](Battery& battery) {
+                if (battery.consumed) return;            // se consume una sola vez
+                battery.consumed = true;
+                changeEnergy(rules_.energy, events);
+            },
+            [this, &events](Trap&) {                     // se activa CADA vez que se entra
+                appendEvents(events, TrapTriggeredEvent{agent_});
+                changeEnergy(-rules_.energyPenalty, events);
+                score_ -= rules_.scorePenalty;           // el puntaje puede ser negativo
+            },
+        }, initialGrid.at(agent_));
     }
 
     // Calculamos la posición destino. Retorna nullopt si el movimiento choca o se sale.
@@ -127,6 +172,8 @@ public:
     Position getAgentPosition() const { return agent_; }
     int getEnergy() const { return energy_; }
     bool isActive() const { return active_; }
+    int getScore() const { return score_; }
+    std::size_t getCollectedResources() const { return collectedResources_; }
 
 
     // Metodos descritos en el informe
@@ -196,29 +243,26 @@ public:
 
         //Validamos la acción
         if (action == Action::wait) {
-            // Si espera, no se mueve. Solo gasta energía.
-            // (Eduardo pon aquí las GameRules)
-            changeEnergy(-1);
+            // Esperar no mueve al agente ni activa la celda donde está. Solo gasta energía.
+            spendEnergy(rules_.energyCostOthers, events);
 
         } else {
             std::optional<Position> target = targetOf(action);
 
             if (target.has_value()) {
-                // Movimiento válido
-                agent_ = *target; // Actualiza la posición
-                changeEnergy(-1);     // Descuenta el costo de moverse
-
-                //CRISTHIAN AÑADIRÁ SU CÓDIGO DE EFECTOS DE CELDAS (applyCellEffect)
+                // Movimiento válido: se mueve, paga la entrada y se aplica el efecto de la celda
+                const Position from = agent_;
+                agent_ = *target;
+                const int cost = entryCost(initialGrid.at(agent_));
+                appendEvents(events, MovedEvent{from, agent_, cost});
+                spendEnergy(cost, events);
+                applyCellEffect(events);
 
             } else {
-                // MOVIMIENTO RECHAZADO (chocó contra muro o borde)
-                changeEnergy(-1); // Gasta energía por el intento fallido
+                // MOVIMIENTO RECHAZADO (chocó contra muro o borde): no se mueve, pero gasta energía
+                appendEvents(events, MovementRejectedEvent{agent_, action});
+                spendEnergy(rules_.energyCostOthers, events);
             }
-        }
-
-        // Protege la invariante de energía (no puede bajar de cero)
-        if (energy_ < 0) {
-            energy_ = 0;
         }
 
         // Comprobamos las condiciones de término (último paso de la resolución)
