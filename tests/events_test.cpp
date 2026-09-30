@@ -66,6 +66,7 @@ int main() {
     // 2. Contenido de cada evento: valores concretos
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at({1, 2}) = ResourceCell<int>{};
         Env e{g, start, 10, 100};
         StepResult r = e.step(Action::right);
@@ -83,6 +84,7 @@ int main() {
     // 3. MovementRejectedEvent guarda la posición y la acción intentada
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         Env e{g, Position{0, 0}, 10, 100};
         StepResult r = e.step(Action::left);
         const auto& rejected = std::get<MovementRejectedEvent>(r.events[0]);
@@ -143,6 +145,7 @@ int main() {
     // 8. Esperar sin cambiar nada relevante: solo EnergyChangedEvent, ningún evento de celda
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at(start) = Trap{};
         Env e{g, start, 10, 100};
         StepResult r = e.step(Action::wait);

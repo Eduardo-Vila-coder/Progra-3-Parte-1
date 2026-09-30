@@ -18,6 +18,7 @@ int main() {
     // 1. Moverse a una celda vacía cuesta 1 y emite MovedEvent + EnergyChangedEvent
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         Env e{g, start, 10, 100};
         StepResult r = e.step(Action::right);
         assert(e.getEnergy() == 9);
@@ -30,6 +31,7 @@ int main() {
     // 2. Entrar a terreno elevado cuesta 2
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at({1, 2}) = RoughTerrain{};
         Env e{g, start, 10, 100};
         StepResult r = e.step(Action::right);
@@ -40,6 +42,7 @@ int main() {
     // 3. Esperar cuesta 1 y NO activa la celda donde está el agente
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at(start) = Trap{};
         Env e{g, start, 10, 100};
         StepResult r = e.step(Action::wait);
@@ -52,6 +55,7 @@ int main() {
     // 4. Movimiento rechazado (muro): no se mueve, cuesta 1, primero MovementRejected
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at({1, 2}) = Wall{};
         Env e{g, start, 10, 100};
         StepResult r = e.step(Action::right);
@@ -64,6 +68,7 @@ int main() {
     // 5. Movimiento rechazado (borde del tablero)
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         Env e{g, Position{0, 0}, 10, 100};
         StepResult r = e.step(Action::up);
         assert(e.getAgentPosition() == Position(0, 0));
@@ -73,6 +78,7 @@ int main() {
     // 6. El recurso se recoge UNA sola vez
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at({1, 2}) = ResourceCell<int>{};
         Env e{g, start, 10, 100};
         StepResult r = e.step(Action::right);
@@ -90,6 +96,7 @@ int main() {
     // 7. La batería recarga, pero nunca por encima del máximo
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at({1, 2}) = Battery{};
         Env e{g, start, 10, 100};             // máximo = 10
         (void)e.step(Action::right);          // 10 - 1 + 3 -> se limita a 10
@@ -99,6 +106,7 @@ int main() {
     // 8. La batería se aplica aunque el costo de entrada deje la energía en 0
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at({1, 2}) = Battery{};
         Env e{g, start, 1, 100};              // máximo = 1
         StepResult r = e.step(Action::right); // 1 - 1 = 0, luego +3 -> se limita a 1
@@ -112,6 +120,7 @@ int main() {
     // 9. La batería se consume UNA sola vez
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at({1, 2}) = Battery{};
         Env e{g, start, 20, 100};
         (void)e.step(Action::wait);           // 19
@@ -126,6 +135,7 @@ int main() {
     // 10. La trampa se activa CADA vez y aplica ambas penalizaciones
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at({1, 2}) = Trap{};
         Env e{g, start, 20, 100};
         StepResult r = e.step(Action::right); // 20 - 1 - 2 = 17, score -1
@@ -142,6 +152,7 @@ int main() {
     // 11. La energía nunca baja de 0 (trampa con poca energía)
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at({1, 2}) = Trap{};
         Env e{g, start, 2, 100};
         StepResult r = e.step(Action::right); // 2 - 1 - 2 -> 0, no -1
@@ -162,6 +173,7 @@ int main() {
     // 13. Los eventos se pueden procesar con std::visit + Overloaded
     {
         Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};  // el entorno exige exactamente una salida
         g.at({1, 2}) = ResourceCell<int>{};
         Env e{g, start, 10, 100};
         StepResult r = e.step(Action::right);

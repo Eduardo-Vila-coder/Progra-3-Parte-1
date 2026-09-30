@@ -4,6 +4,7 @@
 #include <iterator>
 #include <optional>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 #include "cells.hpp"
 #include "events.hpp"
@@ -131,6 +132,41 @@ private:
         }, initialGrid.at(agent_));
     }
 
+    // --- ESPECIALIZACIÓN (enunciado 6.3): CellTraits decide si una celda se puede atravesar ---
+    // std::visit obtiene el tipo concreto de la celda y consulta su rasgo:
+    //   CellTraits<Wall>              -> especialización TOTAL   (no transitable)
+    //   CellTraits<ResourceCell<int>> -> especialización PARCIAL (familia de recursos, transitable)
+    //   el resto                      -> plantilla general       (transitable)
+    static bool isTraversable(const Cell& cell) {
+        return std::visit([](const auto& concrete) {
+            return CellTraits<std::decay_t<decltype(concrete)>>::traversable;
+        }, cell);
+    }
+
+    // Precondiciones del constructor (enunciado 5.7). Lanza std::invalid_argument si alguna falla.
+    void validate() const {
+        if (energy_ <= 0) {
+            throw std::invalid_argument("Error: la energia inicial debe ser positiva");
+        }
+        if (turnLimit == 0) {
+            throw std::invalid_argument("Error: el limite de turnos debe ser positivo");
+        }
+        // INVARIANTE: La posición del agente siempre pertenece al tablero
+        if (!initialGrid.contains(agent_) || !initialGrid.contains(start)) {
+            throw std::invalid_argument("Error: El agente inicia fuera del tablero");
+        }
+        // INVARIANTE: El agente nunca ocupa una celda bloqueada
+        if (!isTraversable(initialGrid.at(agent_)) || !isTraversable(initialGrid.at(start))) {
+            throw std::invalid_argument("Error: El agente inicia en una celda no transitable");
+        }
+        const auto exits = std::count_if(initialGrid.begin(), initialGrid.end(), [](const Cell& cell) {
+            return std::holds_alternative<Exit>(cell);
+        });
+        if (exits != 1) {
+            throw std::invalid_argument("Error: el tablero debe tener exactamente una salida");
+        }
+    }
+
     // Calculamos la posición destino. Retorna nullopt si el movimiento choca o se sale.
     // [Se usó IA para la lógica]
     std::optional<Position> targetOf(Action action) const {
@@ -141,8 +177,8 @@ private:
             return std::nullopt;
         }
 
-        // Si la celda destino es un muro (obstáculo):
-        if (std::holds_alternative<Wall>(initialGrid.at(*candidate))) {
+        // Si la celda destino no se puede atravesar (muro), según CellTraits:
+        if (!isTraversable(initialGrid.at(*candidate))) {
             return std::nullopt;
         }
 
@@ -154,21 +190,13 @@ public:
     NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, Position startPos, int startEnergy, std::size_t turnLimit)
         :  initialGrid(initialGrid), originalGrid_(initialGrid), start(start), agent_(startPos), energy_(startEnergy), maxEnergy_(startEnergy), turnLimit(turnLimit) {
 
-        // INVARIANTE: La posición del agente siempre pertenece al tablero
-        if (! initialGrid.contains(agent_)) {
-            throw std::invalid_argument("Error: El agente inicia fuera del tablero");
-        }
-        
-        // INVARIANTE: El agente nunca ocupa una celda bloqueada
-        // std::holds_alternative verifica si la celda actual es un Muro (Wall)
-        if (std::holds_alternative<Wall>(initialGrid.at(agent_))) {
-            throw std::invalid_argument("Error: El agente inicia dentro de un muro");
-        }
-    
+        validate(); // precondiciones e invariantes iniciales
     }
     NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, int initialEnergy, std::size_t turnLimit)
         : initialGrid(initialGrid),originalGrid_(initialGrid), agent_(start), energy_(initialEnergy), maxEnergy_(initialEnergy),
-          turnLimit(turnLimit), start(start), initialEnergy(initialEnergy) {}     // Constructor original (restaurado: se perdió en el merge 1e87172)
+          turnLimit(turnLimit), start(start), initialEnergy(initialEnergy) {     // Constructor original
+        validate(); // precondiciones e invariantes iniciales
+    }
 
     // Constructor que recibe cualquier perfil de Eduardo: GameRules<Easy>, <Standard> o <Hard>.
     // Toma del perfil la energía inicial/máxima y el límite de turnos, y copia sus costos y recompensas.
@@ -207,6 +235,9 @@ public:
 
     [[nodiscard]] std::uint32_t seed() const noexcept { return seed_; }
 
+    // Límite de turnos de la partida (la interfaz lo muestra en la barra de estado)
+    [[nodiscard]] std::size_t maxTurns() const noexcept { return turnLimit; }
+
     [[nodiscard]] Observation state() const {
         return Observation{agent_, goalPosition(), energy_, maxEnergy_, score_,
                            collectedResources_, turn_, availableActions()};
@@ -239,9 +270,8 @@ public:
                 continue;
             }
 
-            // Ignoramos la accion si esta produce una posicion que traspase un muro
-            // [Se usó IA para saber cómo identificar si el CellType es Wall]
-            if (std::holds_alternative<Wall>(initialGrid.at(position))) {
+            // Ignoramos la accion si esta produce una posicion no transitable (muro), según CellTraits
+            if (!isTraversable(initialGrid.at(position))) {
                 continue;
             }
 

@@ -3,9 +3,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <memory>
 #include <optional>
 #include <random>
 #include <span>
+#include <string_view>
+#include <utility>
 #include "observation.hpp"
 #include "position.hpp"
 
@@ -71,3 +74,57 @@ private:
 
 static_assert(NavigationPolicy<RandomPolicy>);
 static_assert(NavigationPolicy<HeuristicPolicy>);
+
+
+// =====================================================================================
+// --- POLIMORFISMO DINÁMICO: IController (enunciado 5.6, 5.7 y 6.5) ---
+// Interfaz común para cualquier controlador. El juego guarda un std::unique_ptr<IController>
+// y llama a selectAction sin saber qué controlador es: el despacho dinámico ocurre en
+// la llamada virtual. No se usa typeid, dynamic_cast ni condicionales según el tipo.
+class IController {
+public:
+    virtual ~IController() = default;
+    virtual Action selectAction(const Observation& observation, std::span<const Action> legalActions) = 0;
+};
+
+// --- ADAPTADOR GENÉRICO: PolicyController<Policy> ---
+// Convierte cualquier política que cumpla el concept NavigationPolicy (se verifica al compilar)
+// en un IController (se puede cambiar en ejecución). Así se combinan templates, concepts y
+// una interfaz virtual: RandomPolicy y HeuristicPolicy no heredan de nada.
+template <NavigationPolicy Policy>
+class PolicyController final : public IController {
+public:
+    explicit PolicyController(Policy policy) : policy_(std::move(policy)) {}
+
+    Action selectAction(const Observation& observation, std::span<const Action> legalActions) override {
+        return policy_.selectAction(observation, legalActions);
+    }
+
+private:
+    Policy policy_;
+};
+
+// --- CONTROLADOR HUMANO ---
+// Recibe la decisión que le entrega la interfaz (provide) y la devuelve en selectAction.
+// No lee std::cin: la consola traduce la tecla y se la pasa. Puede devolver una acción
+// que no es legal (por ejemplo, chocar contra un muro): el entorno aplica la regla de rechazo.
+class HumanController final : public IController {
+public:
+    void provide(Action action) noexcept { pending_ = action; }
+    [[nodiscard]] bool hasDecision() const noexcept { return pending_.has_value(); }
+
+    // Lanza std::logic_error si la interfaz no entregó ninguna decisión
+    Action selectAction(const Observation& observation, std::span<const Action> legalActions) override;
+
+private:
+    std::optional<Action> pending_;
+};
+
+// --- FÁBRICA DE CONTROLADORES AUTOMÁTICOS ---
+enum class ControllerKind { random, heuristic };
+
+// Crea el controlador pedido. La semilla solo la usa el aleatorio (simulación reproducible).
+std::unique_ptr<IController> makeController(ControllerKind kind, std::uint32_t seed);
+
+// Convierte "random" / "heuristic" en ControllerKind; std::nullopt si el texto no corresponde
+std::optional<ControllerKind> controllerKindFrom(std::string_view name);

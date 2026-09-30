@@ -74,3 +74,32 @@ Action HeuristicPolicy::selectAction(const Observation& observation, std::span<c
     previous_ = observation.agent; // recordamos de dónde salimos
     return *best;
 }
+
+// ===== HumanController =====
+
+Action HumanController::selectAction(const Observation&, std::span<const Action>) {
+    if (!pending_.has_value()) {
+        throw std::logic_error("HumanController: la interfaz no entrego ninguna decision");
+    }
+    const Action action = *pending_;
+    pending_.reset(); // cada decisión se usa una sola vez
+    return action;
+}
+
+// ===== Fábrica =====
+
+std::unique_ptr<IController> makeController(ControllerKind kind, std::uint32_t seed) {
+    switch (kind) {
+    case ControllerKind::random:
+        return std::make_unique<PolicyController<RandomPolicy>>(RandomPolicy{seed});
+    case ControllerKind::heuristic:
+        return std::make_unique<PolicyController<HeuristicPolicy>>(HeuristicPolicy{});
+    }
+    throw std::invalid_argument("makeController: tipo de controlador desconocido");
+}
+
+std::optional<ControllerKind> controllerKindFrom(std::string_view name) {
+    if (name == "random") return ControllerKind::random;
+    if (name == "heuristic") return ControllerKind::heuristic;
+    return std::nullopt;
+}

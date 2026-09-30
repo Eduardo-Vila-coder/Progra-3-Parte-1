@@ -5,6 +5,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Los fuentes tienen emojis y tildes: MSVC debe leerlos como UTF-8
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 # Indicar a CMake dónde buscar las cabeceras (.hpp)
 include_directories(include)
 
@@ -32,19 +37,17 @@ add_library(circuit_escape_core
 target_compile_definitions(circuit_escape_core PUBLIC
         CIRCUIT_ESCAPE_MAPS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/maps")
 
-# Aplicación ejecutable principal (app/main.cpp)
-add_executable(navigation_game
-        app/main.cpp
-        include/circuit_escape/cells.hpp
-        include/circuit_escape/controllers.hpp
-        include/circuit_escape/environment.hpp
-        include/circuit_escape/game_rules.hpp
-        include/circuit_escape/grid.hpp
-        include/circuit_escape/observation.hpp
-        include/circuit_escape/position.hpp
+# Capa de presentación: la ÚNICA que depende de FTXUI (el core y sus pruebas no la usan)
+add_library(circuit_escape_ui
+        app/console_ui.hpp
+        app/console_ui.cpp
 )
-# FTXUI se limita al ejecutable (capa de presentación); el core y las pruebas no dependen de ella
-target_link_libraries(navigation_game PRIVATE circuit_escape_core ftxui::screen ftxui::dom ftxui::component)
+target_include_directories(circuit_escape_ui PUBLIC app)
+target_link_libraries(circuit_escape_ui PUBLIC circuit_escape_core ftxui::screen ftxui::dom ftxui::component)
+
+# Aplicación ejecutable principal (app/main.cpp)
+add_executable(navigation_game app/main.cpp)
+target_link_libraries(navigation_game PRIVATE circuit_escape_ui)
 
 # Pruebas Unitarias explícitas (tests/)
 enable_testing()
@@ -72,3 +75,15 @@ add_test(NAME ScenariosTest COMMAND scenarios_test)
 add_executable(events_test tests/events_test.cpp)
 target_link_libraries(events_test PRIVATE circuit_escape_core)
 add_test(NAME EventsTest COMMAND events_test)
+
+add_executable(ui_test tests/ui_test.cpp)
+target_link_libraries(ui_test PRIVATE circuit_escape_ui)
+add_test(NAME UiTest COMMAND ui_test)
+
+add_executable(polymorphism_test tests/polymorphism_test.cpp)
+target_link_libraries(polymorphism_test PRIVATE circuit_escape_core)
+add_test(NAME PolymorphismTest COMMAND polymorphism_test)
+
+add_executable(simulation_test tests/simulation_test.cpp)
+target_link_libraries(simulation_test PRIVATE circuit_escape_core)
+add_test(NAME SimulationTest COMMAND simulation_test)
