@@ -218,6 +218,9 @@ public:
 
     [[nodiscard]] std::uint32_t seed() const noexcept { return seed_; }
 
+    // Límite de turnos de la partida (la consola lo muestra en la barra de estado: "Turno 27/180")
+    [[nodiscard]] std::size_t maxTurns() const noexcept { return turnLimit; }
+
     [[nodiscard]] Observation state() const {
         return Observation{agent_, goalPosition(), energy_, maxEnergy_, score_,
                            collectedResources_, turn_, availableActions()};
