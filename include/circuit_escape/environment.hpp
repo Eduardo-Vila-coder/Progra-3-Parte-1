@@ -16,6 +16,7 @@ template <std::size_t Rows, std::size_t Columns>
 class NavigationEnvironment {
 private:
     Grid<Cell, Rows, Columns>  initialGrid;
+    Grid<Cell, Rows, Columns>  originalGrid_; // Copia del tablero tal como empezó (para reset)
 
     // --- 5.3 AGENTE: Atributos mínimos exigidos ---
     Position agent_;
@@ -28,6 +29,7 @@ private:
 
     Position start; // Atributo original segun el informe
     int initialEnergy; // Atributo original segun el informe
+    std::uint32_t seed_{0}; // Semilla del último reset (simulación reproducible)
 
     std::size_t turn_{0};
 
