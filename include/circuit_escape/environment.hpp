@@ -151,7 +151,18 @@ private:
 public:
     // Constructor: Configura el entorno y verifica las invariantes
     NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, Position startPos, int startEnergy, std::size_t turnLimit)
-        :  initialGrid(initialGrid), originalGrid_(initialGrid), start(start), agent_(startPos), energy_(startEnergy), maxEnergy_(startEnergy), turnLimit(turnLimit) {
+        :  initialGrid(initialGrid), originalGrid_(initialGrid), start(start), agent_(startPos), energy_(startEnergy)
+        , initialEnergy(startEnergy), maxEnergy_(startEnergy), turnLimit(turnLimit) {
+
+        // INVARIANTE: startEnergy debe ser mayor a 0
+        if (startEnergy <= 0) {
+            throw std::invalid_argument("Error: La energia inicial debe ser positiva");
+        }
+
+        // INVARIANTE: turnLimit debe ser mayor a 0
+        if (turnLimit <= 0) {
+            throw std::invalid_argument("Error: El limite de turnos debe ser positivo");
+        }
 
         // INVARIANTE: La posición del agente siempre pertenece al tablero
         if (! initialGrid.contains(agent_)) {
