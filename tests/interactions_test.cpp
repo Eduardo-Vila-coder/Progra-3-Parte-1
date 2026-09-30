@@ -18,7 +18,7 @@ int main() {
     // 1. Moverse a una celda vacía cuesta 1 y emite MovedEvent + EnergyChangedEvent
     {
         Grid<Cell, 3, 4> g{};
-        Env e{g, start, 10, 100};
+        Env e{g, start, start, 10, 100};
         StepResult r = e.step(Action::right);
         assert(e.getEnergy() == 9);
         assert(r.events.size() == 2);
@@ -31,7 +31,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({1, 2}) = RoughTerrain{};
-        Env e{g, start, 10, 100};
+        Env e{g, start, start, 10, 100};
         StepResult r = e.step(Action::right);
         assert(e.getEnergy() == 8);
         assert(std::get<MovedEvent>(r.events[0]).energyCost == 2);
@@ -41,7 +41,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at(start) = Trap{};
-        Env e{g, start, 10, 100};
+        Env e{g, start, start, 10, 100};
         StepResult r = e.step(Action::wait);
         assert(e.getEnergy() == 9);   // solo el costo de esperar, sin penalización de trampa
         assert(e.getScore() == 0);
@@ -53,7 +53,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({1, 2}) = Wall{};
-        Env e{g, start, 10, 100};
+        Env e{g, start, start, 10, 100};
         StepResult r = e.step(Action::right);
         assert(e.getAgentPosition() == start);
         assert(e.getEnergy() == 9);
@@ -64,7 +64,7 @@ int main() {
     // 5. Movimiento rechazado (borde del tablero)
     {
         Grid<Cell, 3, 4> g{};
-        Env e{g, Position{0, 0}, 10, 100};
+        Env e{g, Position{0, 0}, Position{0, 0}, 10, 100};
         StepResult r = e.step(Action::up);
         assert(e.getAgentPosition() == Position(0, 0));
         assert(std::holds_alternative<MovementRejectedEvent>(r.events[0]));
@@ -74,7 +74,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({1, 2}) = ResourceCell<int>{};
-        Env e{g, start, 10, 100};
+        Env e{g, start, start, 10, 100};
         StepResult r = e.step(Action::right);
         assert(e.getScore() == 10);
         assert(e.getCollectedResources() == 1);
@@ -91,7 +91,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({1, 2}) = Battery{};
-        Env e{g, start, 10, 100};             // máximo = 10
+        Env e{g, start, start, 10, 100};             // máximo = 10
         (void)e.step(Action::right);          // 10 - 1 + 3 -> se limita a 10
         assert(e.getEnergy() == 10);
     }
@@ -100,7 +100,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({1, 2}) = Battery{};
-        Env e{g, start, 1, 100};              // máximo = 1
+        Env e{g, start, start, 1, 100};              // máximo = 1
         StepResult r = e.step(Action::right); // 1 - 1 = 0, luego +3 -> se limita a 1
         assert(e.getEnergy() == 1);
         assert(!r.finished);                  // no termina por noEnergy: la batería lo salvó
@@ -113,7 +113,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({1, 2}) = Battery{};
-        Env e{g, start, 20, 100};
+        Env e{g, start, start, 20, 100};
         (void)e.step(Action::wait);           // 19
         (void)e.step(Action::wait);           // 18
         (void)e.step(Action::right);          // 17 + 3 = 20
@@ -127,7 +127,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({1, 2}) = Trap{};
-        Env e{g, start, 20, 100};
+        Env e{g, start, start, 20, 100};
         StepResult r = e.step(Action::right); // 20 - 1 - 2 = 17, score -1
         assert(e.getEnergy() == 17);
         assert(e.getScore() == -1);
@@ -143,7 +143,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({1, 2}) = Trap{};
-        Env e{g, start, 2, 100};
+        Env e{g, start, start, 2, 100};
         StepResult r = e.step(Action::right); // 2 - 1 - 2 -> 0, no -1
         assert(e.getEnergy() == 0);
         assert(r.finished);
@@ -163,7 +163,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({1, 2}) = ResourceCell<int>{};
-        Env e{g, start, 10, 100};
+        Env e{g, start, start, 10, 100};
         StepResult r = e.step(Action::right);
         int moved = 0, energy = 0, resource = 0;
         for (const NavigationEvent& event : r.events) {

@@ -24,6 +24,16 @@ int main() {
     std::vector<Action> availableActions3{Action::left, Action::right, Action::wait};
     assert(availableActions3 == env3.availableActions());
 
+    // Prueba 4 (consulta movimiento): Un agente en (11, 0) en un mapa con Walls en (10, 0) y (12, 0), y con Trap en (11, 1)
+    // solo debe tener los movimientos validos: right, wait
+    Grid<Cell, 20, 30> grid3{};
+    grid3.at(Position{10, 0}) = Wall{};
+    grid3.at(Position{12, 0}) = Wall{};
+    grid3.at(Position{11, 1}) = Trap{};
+    NavigationEnvironment env4{grid3, Position(0, 0), Position(11, 0), 10, 13};
+    std::vector availableActions4{Action::right, Action::wait};
+    assert(availableActions4 == env4.availableActions());
+
     // Prueba 1 (realizacion movimiento): Un agente en (0, 0) debe ser capaz de realizar el movimiento down
     auto d = env.step(Action::down);
     assert((env.getAgentPosition() == Position{1, 0}));

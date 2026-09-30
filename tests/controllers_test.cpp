@@ -196,7 +196,7 @@ int main() {
         g.at({1, 1}) = Wall{};
         g.at({2, 1}) = Wall{};
         g.at({2, 3}) = Exit{};
-        NavigationEnvironment<3, 4> env{g, Position(2, 0), 20, 50};
+        NavigationEnvironment<3, 4> env{g, Position(2, 0), Position(2, 0), 20, 50};
 
         HeuristicPolicy policy;
         StepResult last{};
@@ -215,7 +215,7 @@ int main() {
         Grid<Cell, 3, 4> g{};
         g.at({1, 1}) = Wall{};
         g.at({2, 3}) = Exit{};
-        NavigationEnvironment<3, 4> env{g, Position(0, 0), 30, 40};
+        NavigationEnvironment<3, 4> env{g, Position(0, 0), Position(0, 0), 30, 40};
 
         RandomPolicy policy{2026};
         while (!env.isFinished()) {
