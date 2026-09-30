@@ -6,6 +6,7 @@
 int main() {
     // Prueba 1 (consulta movimiento): Un agente en (0, 0) solo debe tener los movimientos validos: down, right, wait
     Grid<Cell, 20, 30> grid{};
+    grid.at(Position{15, 15}) = Exit{};  // el entorno exige exactamente una salida (enunciado 5.7)
     NavigationEnvironment<20, 30> env{grid, Position(0, 0), Position(0, 0), 10, 13};
     std::vector<Action> availableActions1{Action::down, Action::right, Action::wait};
     assert(availableActions1 == env.availableActions());
@@ -18,6 +19,7 @@ int main() {
     // Prueba 3 (consulta movimiento): Un agente en (10, 10) en un mapa con Walls en (9, 10) y (11, 10)
     // solo debe tener los movimientos validos: left, right, wait
     Grid<Cell, 20, 30> grid2{};
+    grid2.at(Position{15, 15}) = Exit{};  // el entorno exige exactamente una salida (enunciado 5.7)
     grid2.at(Position{9, 10}) = Wall{};     // Se uso IA para saber como hacer esta asignacion de std::variant
     grid2.at(Position{11, 10}) = Wall{};
     NavigationEnvironment<20, 30> env3{grid2, Position(0, 0), Position(10, 10), 10, 13};
@@ -27,6 +29,7 @@ int main() {
     // Prueba 4 (consulta movimiento): Un agente en (11, 0) en un mapa con Walls en (10, 0) y (12, 0), y con Trap en (11, 1)
     // solo debe tener los movimientos validos: right, wait
     Grid<Cell, 20, 30> grid3{};
+    grid3.at(Position{15, 15}) = Exit{};  // el entorno exige exactamente una salida (enunciado 5.7)
     grid3.at(Position{10, 0}) = Wall{};
     grid3.at(Position{12, 0}) = Wall{};
     grid3.at(Position{11, 1}) = Trap{};
@@ -190,6 +193,63 @@ int main() {
         }
         assert(threw);
         assert(e.state().turn == 1); // El intento rechazado no consumió turno
+    }
+
+    // ===== PRECONDICIONES DEL CONSTRUCTOR (enunciado 5.7) =====
+    // Cada caso inválido debe lanzar std::invalid_argument
+    {
+        auto rejects = [](auto build) {
+            try {
+                build();
+            } catch (const std::invalid_argument&) {
+                return true;
+            }
+            return false;
+        };
+        Grid<Cell, 3, 4> valid{};
+        valid.at({2, 3}) = Exit{};
+
+        // Válido: no lanza
+        assert(!rejects([&] { NavigationEnvironment<3, 4> e{valid, Position(0, 0), 10, 20}; }));
+        // Inicio fuera del tablero
+        assert(rejects([&] { NavigationEnvironment<3, 4> e{valid, Position(3, 0), 10, 20}; }));
+        // Inicio sobre un muro
+        Grid<Cell, 3, 4> wallStart = valid;
+        wallStart.at({0, 0}) = Wall{};
+        assert(rejects([&] { NavigationEnvironment<3, 4> e{wallStart, Position(0, 0), 10, 20}; }));
+        // Sin salida
+        Grid<Cell, 3, 4> noExit{};
+        assert(rejects([&] { NavigationEnvironment<3, 4> e{noExit, Position(0, 0), 10, 20}; }));
+        // Dos salidas
+        Grid<Cell, 3, 4> twoExits = valid;
+        twoExits.at({0, 3}) = Exit{};
+        assert(rejects([&] { NavigationEnvironment<3, 4> e{twoExits, Position(0, 0), 10, 20}; }));
+        // Energía inicial no positiva
+        assert(rejects([&] { NavigationEnvironment<3, 4> e{valid, Position(0, 0), 0, 20}; }));
+        assert(rejects([&] { NavigationEnvironment<3, 4> e{valid, Position(0, 0), -5, 20}; }));
+        // Límite de turnos no positivo
+        assert(rejects([&] { NavigationEnvironment<3, 4> e{valid, Position(0, 0), 10, 0}; }));
+        // También con el constructor de 5 parámetros y con el de perfil de dificultad
+        assert(rejects([&] { NavigationEnvironment<3, 4> e{noExit, Position(0, 0), Position(0, 0), 10, 20}; }));
+        assert(rejects([&] { NavigationEnvironment<3, 4> e{noExit, Position(0, 0), GameRules<Difficulty::Hard>{}}; }));
+    }
+
+    // ===== CellTraits (especialización total y parcial, enunciado 6.3) =====
+    {
+        static_assert(!CellTraits<Wall>::traversable);                 // especialización total
+        static_assert(CellTraits<ResourceCell<int>>::traversable);     // especialización parcial
+        static_assert(CellTraits<ResourceCell<double>>::traversable);  // misma familia, otra recompensa
+        static_assert(CellTraits<Empty>::traversable);                 // plantilla general
+        static_assert(CellTraits<RoughTerrain>::traversable);
+
+        // El entorno usa los rasgos para decidir qué movimientos son legales
+        Grid<Cell, 3, 4> g{};
+        g.at({2, 3}) = Exit{};
+        g.at({0, 1}) = ResourceCell<int>{};
+        g.at({1, 0}) = Wall{};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), 10, 20};
+        const std::vector<Action> expected{Action::right, Action::wait};  // abajo es muro
+        assert(e.availableActions() == expected);
     }
 
     std::cout << "environment_test: todas las pruebas pasaron\n";
