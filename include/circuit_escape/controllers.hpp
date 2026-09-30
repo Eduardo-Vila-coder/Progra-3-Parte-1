@@ -1,4 +1,5 @@
 #pragma once
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -13,6 +14,13 @@
 // Si hay empate gana el primero del rango, así el resultado es determinista.
 // Recibe el rango mediante iteradores, por eso sirve igual para vector, list u otro contenedor.
 // Si el rango está vacío retorna last (como los algoritmos de <algorithm>).
+template<typename Policy>
+concept NavigationPolicy = requires(Policy& policy,
+    const Observation& observation,
+    std::span<const Action> actions) {
+    { policy.selectAction(observation, actions) } -> std::same_as<Action>;
+};
+
 template <std::forward_iterator Iterator, typename Cost>
 Iterator bestBy(Iterator first, Iterator last, Cost cost) {
     if (first == last) {
@@ -60,3 +68,6 @@ public:
 private:
     std::optional<Position> previous_; // casilla donde estaba el agente antes del último movimiento
 };
+
+static_assert(NavigationPolicy<RandomPolicy>);
+static_assert(NavigationPolicy<HeuristicPolicy>);
