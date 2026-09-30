@@ -190,7 +190,22 @@ public:
 
     // Metodos descritos en el informe
 
-    void reset(std::uint32_t seed) {}
+    // Vuelve la partida a su estado inicial: tablero original (recursos y baterías disponibles otra vez),
+    // agente en el inicio, energía máxima, puntaje, recursos y turno en cero. Las reglas no cambian.
+    // La semilla se guarda para que la simulación sepa con qué semilla se reinició.
+    void reset(std::uint32_t seed) {
+        seed_ = seed;
+        initialGrid = originalGrid_;
+        agent_ = start;
+        energy_ = maxEnergy_;
+        score_ = 0;
+        collectedResources_ = 0;
+        turn_ = 0;
+        active_ = true;
+        endReason_ = EndReason::none;
+    }
+
+    [[nodiscard]] std::uint32_t seed() const noexcept { return seed_; }
 
     [[nodiscard]] Observation state() const {
         return Observation{agent_, goalPosition(), energy_, maxEnergy_, score_,
