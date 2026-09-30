@@ -22,6 +22,7 @@ add_library(circuit_escape_core
         include/circuit_escape/grid.hpp
         include/circuit_escape/cells.hpp
         include/circuit_escape/environment.hpp
+        include/circuit_escape/events.hpp
         include/circuit_escape/controllers.hpp
         include/circuit_escape/game_rules.hpp
         src/environment.cpp
@@ -67,3 +68,7 @@ add_test(NAME ControllersTest COMMAND controllers_test)
 add_executable(scenarios_test tests/scenarios_test.cpp)
 target_link_libraries(scenarios_test PRIVATE circuit_escape_core)
 add_test(NAME ScenariosTest COMMAND scenarios_test)
+
+add_executable(events_test tests/events_test.cpp)
+target_link_libraries(events_test PRIVATE circuit_escape_core)
+add_test(NAME EventsTest COMMAND events_test)
