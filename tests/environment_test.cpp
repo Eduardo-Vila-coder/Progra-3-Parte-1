@@ -5,21 +5,24 @@
 
 int main() {
     // Prueba 1 (consulta movimiento): Un agente en (0, 0) solo debe tener los movimientos validos: down, right, wait
-    // Actualizar con el agente
     Grid<Cell, 20, 30> grid{};
-    NavigationEnvironment<20, 30> env{grid, Position(0, 0), 10, 13};
-    // Definir un agente
+    NavigationEnvironment<20, 30> env{grid, Position(0, 0), Position(0, 0), 10, 13};
     std::vector<Action> availableActions1{Action::down, Action::right, Action::wait};
     assert(availableActions1 == env.availableActions());
 
     // Prueba 2 (consulta movimiento): Un agente en (19, 29) solo debe tener los movimientos validos: up, left, wait
-    // std::vector<Action> availableActions2{Action::up, Action::left, Action::wait};
-    // assert(availableActions2 == env.availableActions());
+    NavigationEnvironment<20, 30> env2{grid, Position(0, 0), Position(19, 29), 10, 13};
+    std::vector<Action> availableActions2{Action::up, Action::left, Action::wait};
+    assert(availableActions2 == env2.availableActions());
 
     // Prueba 3 (consulta movimiento): Un agente en (10, 10) en un mapa con Walls en (9, 10) y (11, 10)
     // solo debe tener los movimientos validos: left, right, wait
-    // std::vector<Action> availableActions3{Action::left, Action::right, Action::wait};
-    // assert(availableActions3 == env.availableActions());
+    Grid<Cell, 20, 30> grid2{};
+    grid2.at(Position{9, 10}) = Wall{};     // Se uso IA para saber como hacer esta asignacion de std::variant
+    grid2.at(Position{11, 10}) = Wall{};
+    NavigationEnvironment<20, 30> env3{grid2, Position(0, 0), Position(10, 10), 10, 13};
+    std::vector<Action> availableActions3{Action::left, Action::right, Action::wait};
+    assert(availableActions3 == env3.availableActions());
 
     // Prueba 1 (carga perfiles): Dificultad estandar
     auto g1 = GameRules<Difficulty::Standard>{};
@@ -63,7 +66,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({0, 1}) = Exit{};
-        NavigationEnvironment<3, 4> e{g, Position(0, 0), 10, 20};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), Position(0, 0), 10, 20};
         StepResult r = e.step(Action::right);
         assert(r.finished);
         assert(r.reason == EndReason::goalReached);
@@ -81,7 +84,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({2, 3}) = Exit{};
-        NavigationEnvironment<3, 4> e{g, Position(0, 0), 2, 50};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), Position(0, 0), 2, 50};
         StepResult r1 = e.step(Action::right);
         assert(!r1.finished);
         assert(r1.reason == EndReason::none);
@@ -96,7 +99,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({2, 3}) = Exit{};
-        NavigationEnvironment<3, 4> e{g, Position(0, 0), 50, 2};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), Position(0, 0), 50, 2};
         StepResult r1 = e.step(Action::wait);
         assert(!r1.finished);
         StepResult r2 = e.step(Action::wait);
@@ -109,7 +112,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({0, 1}) = Exit{};
-        NavigationEnvironment<3, 4> e{g, Position(0, 0), 1, 20};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), Position(0, 0), 1, 20};
         StepResult r = e.step(Action::right);
         assert(r.finished);
         assert(r.reason == EndReason::noEnergy);
@@ -122,7 +125,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({0, 2}) = Exit{};
-        NavigationEnvironment<3, 4> e{g, Position(0, 0), 10, 2};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), Position(0, 0), 10, 2};
         StepResult r1 = e.step(Action::right);
         assert(!r1.finished);
         StepResult r2 = e.step(Action::right);
@@ -134,7 +137,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({2, 3}) = Exit{};
-        NavigationEnvironment<3, 4> e{g, Position(0, 0), 1, 1};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), Position(0, 0), 1, 1};
         StepResult r = e.step(Action::wait);
         assert(r.finished);
         assert(r.reason == EndReason::noEnergy);
@@ -145,7 +148,7 @@ int main() {
     {
         Grid<Cell, 3, 4> g{};
         g.at({0, 1}) = Exit{};
-        NavigationEnvironment<3, 4> e{g, Position(0, 0), 10, 20};
+        NavigationEnvironment<3, 4> e{g, Position(0, 0), Position(0, 0), 10, 20};
         StepResult r = e.step(Action::right);
         assert(r.finished);
         assert(e.availableActions().empty());
