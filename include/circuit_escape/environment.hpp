@@ -151,7 +151,7 @@ private:
 public:
     // Constructor: Configura el entorno y verifica las invariantes
     NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, Position startPos, int startEnergy, std::size_t turnLimit)
-        :  initialGrid(initialGrid), start(start), agent_(startPos), energy_(startEnergy), maxEnergy_(startEnergy), turnLimit(turnLimit) {
+        :  initialGrid(initialGrid), originalGrid_(initialGrid), start(start), agent_(startPos), energy_(startEnergy), maxEnergy_(startEnergy), turnLimit(turnLimit) {
 
         // INVARIANTE: La posición del agente siempre pertenece al tablero
         if (! initialGrid.contains(agent_)) {
@@ -167,7 +167,7 @@ public:
 
 
     NavigationEnvironment(Grid<Cell, Rows, Columns> initialGrid, Position start, int initialEnergy, std::size_t turnLimit)
-        : initialGrid(initialGrid), agent_(start), energy_(initialEnergy), maxEnergy_(initialEnergy),
+        : initialGrid(initialGrid),originalGrid_(initialGrid), agent_(start), energy_(initialEnergy), maxEnergy_(initialEnergy),
           turnLimit(turnLimit), start(start), initialEnergy(initialEnergy) {}     // Constructor original
 
     // Constructor que recibe cualquier perfil de Eduardo: GameRules<Easy>, <Standard> o <Hard>.
