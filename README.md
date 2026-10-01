@@ -216,6 +216,19 @@ assets/maps/              escenarios de 20 × 30
 docs/                     design.md y contributions.md
 ```
 
+## Créditos y licencias
+
+- **FTXUI v7.0.3**, de Arthur Sonzogni (<https://github.com/ArthurSonzogni/FTXUI>), licencia MIT.
+  Se usa solo en la capa de presentación y CMake la descarga con `FetchContent`; su código no se
+  incluye en este repositorio.
+- **Patrón `Overloaded`** (`include/circuit_escape/overloaded.hpp`): adaptado del ejemplo de
+  `std::visit` en cppreference (<https://en.cppreference.com/w/cpp/utility/variant/visit>).
+- **Escenario 1** (`assets/maps/scenario_01.txt`): reproduce el ejemplo de 20 × 30 de la página 11
+  del enunciado del curso.
+- **Asistencia de IA:** partes del código, de las pruebas y de la documentación se hicieron con ayuda
+  de Claude (Anthropic), como se detalla en [`docs/contributions.md`](docs/contributions.md) y en los
+  comentarios `[Se usó IA …]` del código. Todo fue revisado, compilado y probado por el grupo.
+
 ## Entrega
 
 La entrega es el commit marcado con el tag anotado `proyecto-1-entrega` en la rama `main`:
