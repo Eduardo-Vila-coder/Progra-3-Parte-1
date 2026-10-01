@@ -3,6 +3,8 @@
 #include <vector>
 
 // Agrupa varias lambdas en un solo objeto con varios operator() (para std::visit)
+// Patron "overloaded" adaptado del ejemplo de std::visit en cppreference:
+// https://en.cppreference.com/w/cpp/utility/variant/visit
 template <typename... Callables>
 struct Overloaded : Callables... {
     using Callables::operator()...;
