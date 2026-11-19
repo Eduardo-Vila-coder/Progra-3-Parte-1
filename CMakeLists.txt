@@ -35,8 +35,13 @@ add_library(circuit_escape_core
         include/circuit_escape/events.hpp
         include/circuit_escape/controllers.hpp
         include/circuit_escape/game_rules.hpp
+        include/circuit_escape/graph/graph.hpp
+        include/circuit_escape/map_generation/map_builder.hpp
+        include/circuit_escape/map_generation/map_selector.hpp
         src/environment.cpp
         src/controllers.cpp
+        src/graph/graph.cpp
+        src/map_generation/map_selector.cpp
 )
 # Ruta absoluta de los mapas: los escenarios se cargan igual desde cualquier carpeta de compilación
 target_compile_definitions(circuit_escape_core PUBLIC
@@ -88,3 +93,7 @@ add_test(NAME SimulationTest COMMAND simulation_test)
 add_executable(ui_test tests/ui_test.cpp)
 target_link_libraries(ui_test PRIVATE circuit_escape_ui)
 add_test(NAME UiTest COMMAND ui_test)
+
+add_executable(map_generation_test tests/map_generation/map_generation_test.cpp)
+target_link_libraries(map_generation_test PRIVATE circuit_escape_core)
+add_test(NAME MapGenerationTest COMMAND map_generation_test)
