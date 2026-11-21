@@ -50,7 +50,14 @@ std::string ConsoleUI::glyphFor(const Cell &cell) const
                                  [&](const Trap &)
                                  { return std::string(ascii ? "T" : "💥"); },
                                  [&](const Exit &)
-                                 { return std::string(ascii ? "S" : "🏁"); }},
+                                 { return std::string(ascii ? "S" : "🏁"); },
+                                 //? interruptor: candado cerrado mientras está pendiente y abierto al activarse
+                                 [&](const Switch &sw)
+                                 {
+                                     if (sw.active)
+                                         return std::string(ascii ? "*" : "🔓");
+                                     return std::string(ascii ? (sw.id == SwitchId::A ? "a" : "b") : "🔒");
+                                 }},
                       cell);
 }
 
@@ -106,7 +113,12 @@ ftxui::Element ConsoleUI::render(const NavigationEnvironment<20, 30> &environmen
                              " | Energía " + std::to_string(state.energy) + "/" + std::to_string(state.maximumEnergy) +
                              " | Puntaje " + std::to_string(state.score) +
                              " | Recursos " + std::to_string(state.collectedResources) + "/" +
-                             std::to_string(totalResources));
+                             std::to_string(totalResources) +
+                             //? proyecto 2: estado de los interruptores (solo si el mapa los tiene)
+                             (state.hasSwitches
+                                  ? std::string(" | A ") + (state.switchAActive ? "activado" : "pendiente") +
+                                        " | B " + (state.switchBActive ? "activado" : "pendiente")
+                                  : std::string{}));
 
     Elements gridRows;
 
@@ -185,7 +197,8 @@ ftxui::Element ConsoleUI::help() const
         help_lines.push_back(text("  • 💎 : Recurso (suma puntos, una sola vez)"));
         help_lines.push_back(text("  • ⚡ : Batería (recupera energía, una sola vez)"));
         help_lines.push_back(text("  • 💥 : Trampa (resta energía y puntaje en cada entrada)"));
-        help_lines.push_back(text("  • 🏁 : Salida"));
+        help_lines.push_back(text("  • 🏁 : Salida (requiere los interruptores A y B activados)"));
+        help_lines.push_back(text("  • 🔒 : Interruptor pendiente / 🔓 activado"));
     }
     else
     {
@@ -196,7 +209,8 @@ ftxui::Element ConsoleUI::help() const
         help_lines.push_back(text("  •  R : Recurso"));
         help_lines.push_back(text("  •  B : Batería"));
         help_lines.push_back(text("  •  T : Trampa"));
-        help_lines.push_back(text("  •  S : Salida"));
+        help_lines.push_back(text("  •  S : Salida (requiere los interruptores A y B activados)"));
+        help_lines.push_back(text("  •  a : Interruptor A  b : Interruptor B  * : Activado"));
     }
 
     help_lines.push_back(separator());
