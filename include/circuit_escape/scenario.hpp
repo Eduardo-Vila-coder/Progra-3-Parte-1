@@ -1,8 +1,11 @@
 #pragma once
 #include <cstddef>
+#include <filesystem>
 #include <fstream>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 #include "cells.hpp"
 #include "grid.hpp"
@@ -14,6 +17,7 @@
 //   R  recurso              B  batería          T  trampa
 //   S  salida               @  inicio del agente (la celda es un espacio libre)
 //   a  interruptor A        b  interruptor B      (proyecto 2; en minúscula porque B es la batería)
+//   V  inicio del vigilante (proyecto 2; la celda es un espacio libre)
 // Cada línea es una fila y cada carácter una columna.
 
 // Carpeta de los mapas. CMake la define con la ruta absoluta de assets/maps
@@ -32,9 +36,34 @@ inline const std::string scenario01File = "scenario_01.txt";
 // Se puede completar en easy, standard y hard.
 inline const std::string scenario02File = "scenario_02.txt";
 
+// Carpeta de mapas usada en tiempo de ejecución. Por defecto es la del código fuente (la define CMake),
+// así funcionan las pruebas y el juego compilado en CLion. El juego INSTALADO no tiene el código fuente:
+// main la cambia por la carpeta assets/maps que el instalador copia junto al programa.
+inline std::string& mapsDirectory() {
+    static std::string directory = CIRCUIT_ESCAPE_MAPS_DIR;
+    return directory;
+}
+
+inline void setMapsDirectory(std::string directory) {
+    mapsDirectory() = std::move(directory);
+}
+
+// Busca assets/maps junto al ejecutable (bin/assets/maps) o en la carpeta de instalación
+// (bin/../assets/maps). Devuelve nullopt si no la encuentra.
+inline std::optional<std::filesystem::path> findMapsNextTo(const std::filesystem::path& executable) {
+    const std::filesystem::path folder = executable.parent_path();
+    for (const std::filesystem::path& candidate : {folder / "assets" / "maps", folder.parent_path() / "assets" / "maps"}) {
+        std::error_code error;
+        if (std::filesystem::is_directory(candidate, error)) {
+            return candidate;
+        }
+    }
+    return std::nullopt;
+}
+
 // Ruta completa de un archivo dentro de la carpeta de mapas
 inline std::string scenarioPath(const std::string& fileName) {
-    return std::string(CIRCUIT_ESCAPE_MAPS_DIR) + "/" + fileName;
+    return mapsDirectory() + "/" + fileName;
 }
 
 // Resultado de cargar un escenario: el tablero y la posición inicial del agente
@@ -42,13 +71,15 @@ template <std::size_t Rows, std::size_t Columns>
 struct Scenario {
     Grid<Cell, Rows, Columns> grid;
     Position start;
+    std::optional<Position> guard; // proyecto 2: inicio del vigilante (si el mapa lo tiene)
 };
 
 // Convierte un símbolo del mapa en su celda
 inline Cell cellFromSymbol(char symbol) {
     switch (symbol) {
     case '.':
-    case '@': return Empty{};
+    case '@':
+    case 'V': return Empty{};
     case '#': return Wall{};
     case '~': return RoughTerrain{};
     case 'R': return ResourceCell<int>{10};
@@ -75,6 +106,7 @@ Scenario<Rows, Columns> scenarioFromLines(const std::vector<std::string>& lines)
     std::size_t exits = 0;
     std::size_t switchesA = 0;
     std::size_t switchesB = 0;
+    std::size_t guards = 0;
 
     for (std::size_t row = 0; row < Rows; ++row) {
         if (lines[row].size() != Columns) {
@@ -93,6 +125,9 @@ Scenario<Rows, Columns> scenarioFromLines(const std::vector<std::string>& lines)
                 ++switchesA;
             } else if (symbol == 'b') {
                 ++switchesB;
+            } else if (symbol == 'V') {
+                scenario.guard = Position{row, column};
+                ++guards;
             }
         }
     }
@@ -106,6 +141,9 @@ Scenario<Rows, Columns> scenarioFromLines(const std::vector<std::string>& lines)
     // Proyecto 2: un interruptor 'a' y uno 'b' (los mapas del proyecto 1 no tienen ninguno)
     if (switchesA > 1 || switchesB > 1 || switchesA != switchesB) {
         throw std::invalid_argument("Escenario: debe haber un interruptor 'a' y uno 'b'");
+    }
+    if (guards > 1) {
+        throw std::invalid_argument("Escenario: debe haber como maximo un vigilante 'V'");
     }
     return scenario;
 }

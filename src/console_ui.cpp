@@ -118,7 +118,10 @@ ftxui::Element ConsoleUI::render(const NavigationEnvironment<20, 30> &environmen
                              (state.hasSwitches
                                   ? std::string(" | A ") + (state.switchAActive ? "activado" : "pendiente") +
                                         " | B " + (state.switchBActive ? "activado" : "pendiente")
-                                  : std::string{}));
+                                  : std::string{}) +
+                             //? proyecto 2: avisa cuándo le toca avanzar al vigilante (turnos pares)
+                             (state.hasGuard ? std::string(state.guardMovesNextTurn ? " | Vigilante: avanza" : " | Vigilante: quieto")
+                                             : std::string{}));
 
     Elements gridRows;
 
@@ -141,7 +144,8 @@ ftxui::Element ConsoleUI::render(const NavigationEnvironment<20, 30> &environmen
             const Position current{row, column};
             //? el agente se dibuja encima de la celda que ocupa
             std::string symbol = current == state.agent ? (mode_ == RenderMode::emoji ? "🤖" : "@")
-                                                        : glyphFor(grid.at(current));
+                                 : (state.hasGuard && current == state.guard) ? (mode_ == RenderMode::emoji ? "👮" : "V")
+                                                                              : glyphFor(grid.at(current));
             rowElements.push_back(text(std::move(symbol)) | size(WIDTH, EQUAL, 2));
         }
         gridRows.push_back(hbox(std::move(rowElements)));
@@ -199,6 +203,7 @@ ftxui::Element ConsoleUI::help() const
         help_lines.push_back(text("  • 💥 : Trampa (resta energía y puntaje en cada entrada)"));
         help_lines.push_back(text("  • 🏁 : Salida (requiere los interruptores A y B activados)"));
         help_lines.push_back(text("  • 🔒 : Interruptor pendiente / 🔓 activado"));
+        help_lines.push_back(text("  • 👮 : Vigilante (avanza en turnos pares)"));
     }
     else
     {
@@ -211,6 +216,7 @@ ftxui::Element ConsoleUI::help() const
         help_lines.push_back(text("  •  T : Trampa"));
         help_lines.push_back(text("  •  S : Salida (requiere los interruptores A y B activados)"));
         help_lines.push_back(text("  •  a : Interruptor A  b : Interruptor B  * : Activado"));
+        help_lines.push_back(text("  •  V : Vigilante (avanza en turnos pares)"));
     }
 
     help_lines.push_back(separator());
@@ -227,6 +233,7 @@ std::string finalSummary(EndReason reason, const Observation &observation)
     case EndReason::goalReached: outcome = "¡Partida completada!"; break;
     case EndReason::noEnergy:    outcome = "Sin energía."; break;
     case EndReason::turnLimit:   outcome = "Límite de turnos alcanzado."; break;
+    case EndReason::captured:    outcome = "Capturado por el vigilante."; break;
     case EndReason::none:        outcome = "Partida en curso."; break;
     }
     return outcome + " Turnos " + std::to_string(observation.turn) +

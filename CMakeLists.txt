@@ -25,6 +25,8 @@ FetchContent_Declare(ftxui
         GIT_TAG v7.0.3
         GIT_SHALLOW TRUE
 )
+# El instalador solo debe llevar nuestros programas, no las cabeceras ni las bibliotecas de FTXUI
+set(FTXUI_ENABLE_INSTALL OFF CACHE BOOL "No instalar FTXUI" FORCE)
 FetchContent_MakeAvailable(ftxui)
 
 # Biblioteca central (Core)
@@ -38,10 +40,14 @@ add_library(circuit_escape_core
         include/circuit_escape/graph/graph.hpp
         include/circuit_escape/map_generation/map_builder.hpp
         include/circuit_escape/map_generation/map_selector.hpp
+        include/circuit_escape/pathfinding/search_result.hpp
+        include/circuit_escape/pathfinding/bfs.hpp
+        include/circuit_escape/controllers/guard_controller.hpp
         src/environment.cpp
         src/controllers.cpp
         src/graph/graph.cpp
         src/map_generation/map_selector.cpp
+        src/controllers/guard_controller.cpp
 )
 # Ruta absoluta de los mapas: los escenarios se cargan igual desde cualquier carpeta de compilación
 target_compile_definitions(circuit_escape_core PUBLIC
@@ -54,9 +60,16 @@ add_library(circuit_escape_ui
 )
 target_link_libraries(circuit_escape_ui PUBLIC circuit_escape_core ftxui::screen ftxui::dom ftxui::component)
 
-# Aplicación ejecutable principal (app/main.cpp)
-add_executable(navigation_game app/main.cpp)
-target_link_libraries(navigation_game PRIVATE circuit_escape_ui)
+# Aplicación ejecutable principal: el juego (app/main.cpp). Nombre exigido por el proyecto 2 (5.3)
+add_executable(escape_circuit app/main.cpp)
+target_link_libraries(escape_circuit PRIVATE circuit_escape_ui)
+
+# Generador de mapas (proyecto 2, 5.3): se agrega automáticamente cuando exista app/map_generator_main.cpp.
+# Solo usa el core (Kruskal, Dijkstra, guardado de mapas), no la consola con FTXUI.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/app/map_generator_main.cpp")
+    add_executable(map_generator app/map_generator_main.cpp)
+    target_link_libraries(map_generator PRIVATE circuit_escape_core)
+endif()
 
 # Pruebas Unitarias explícitas (tests/)
 enable_testing()
@@ -98,6 +111,17 @@ add_executable(switches_test tests/switches_test.cpp)
 target_link_libraries(switches_test PRIVATE circuit_escape_core)
 add_test(NAME SwitchesTest COMMAND switches_test)
 
+add_executable(bfs_test tests/pathfinding/bfs_test.cpp)
+target_link_libraries(bfs_test PRIVATE circuit_escape_core)
+add_test(NAME BfsTest COMMAND bfs_test)
+
+add_executable(guard_test tests/guard_test.cpp)
+target_link_libraries(guard_test PRIVATE circuit_escape_core)
+add_test(NAME GuardTest COMMAND guard_test)
+
 add_executable(map_generation_test tests/map_generation/map_generation_test.cpp)
 target_link_libraries(map_generation_test PRIVATE circuit_escape_core)
 add_test(NAME MapGenerationTest COMMAND map_generation_test)
+
+# Instalador de Windows con CPack + NSIS (proyecto 2, 8.1). Ver installer/README.md
+include(installer/installer.cmake)
