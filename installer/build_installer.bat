@@ -10,7 +10,11 @@ REM ====================================================================
 setlocal
 cd /d "%~dp0.."
 
-cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
+REM Si Ninja esta disponible (viene con CLion) se usa; si no, el generador por defecto
+set GENERATOR=
+where ninja >nul 2>nul && set GENERATOR=-G Ninja
+
+cmake -S . -B build-release %GENERATOR% -DCMAKE_BUILD_TYPE=Release
 if errorlevel 1 goto error
 
 cmake --build build-release --config Release
