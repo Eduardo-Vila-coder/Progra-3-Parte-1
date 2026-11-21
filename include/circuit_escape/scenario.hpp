@@ -13,6 +13,7 @@
 //   .  espacio libre        #  muro             ~  terreno de costo elevado
 //   R  recurso              B  batería          T  trampa
 //   S  salida               @  inicio del agente (la celda es un espacio libre)
+//   a  interruptor A        b  interruptor B      (proyecto 2; en minúscula porque B es la batería)
 // Cada línea es una fila y cada carácter una columna.
 
 // Carpeta de los mapas. CMake la define con la ruta absoluta de assets/maps
@@ -54,6 +55,8 @@ inline Cell cellFromSymbol(char symbol) {
     case 'B': return Battery{};
     case 'T': return Trap{};
     case 'S': return Exit{};
+    case 'a': return Switch{SwitchId::A};
+    case 'b': return Switch{SwitchId::B};
     }
     throw std::invalid_argument(std::string("Escenario: simbolo desconocido '") + symbol + "'");
 }
@@ -70,6 +73,8 @@ Scenario<Rows, Columns> scenarioFromLines(const std::vector<std::string>& lines)
     Scenario<Rows, Columns> scenario{};
     std::size_t starts = 0;
     std::size_t exits = 0;
+    std::size_t switchesA = 0;
+    std::size_t switchesB = 0;
 
     for (std::size_t row = 0; row < Rows; ++row) {
         if (lines[row].size() != Columns) {
@@ -84,6 +89,10 @@ Scenario<Rows, Columns> scenarioFromLines(const std::vector<std::string>& lines)
                 ++starts;
             } else if (symbol == 'S') {
                 ++exits;
+            } else if (symbol == 'a') {
+                ++switchesA;
+            } else if (symbol == 'b') {
+                ++switchesB;
             }
         }
     }
@@ -93,6 +102,10 @@ Scenario<Rows, Columns> scenarioFromLines(const std::vector<std::string>& lines)
     }
     if (exits != 1) {
         throw std::invalid_argument("Escenario: debe haber exactamente una salida 'S'");
+    }
+    // Proyecto 2: un interruptor 'a' y uno 'b' (los mapas del proyecto 1 no tienen ninguno)
+    if (switchesA > 1 || switchesB > 1 || switchesA != switchesB) {
+        throw std::invalid_argument("Escenario: debe haber un interruptor 'a' y uno 'b'");
     }
     return scenario;
 }

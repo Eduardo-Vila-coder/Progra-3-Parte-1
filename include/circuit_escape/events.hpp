@@ -5,6 +5,7 @@
 #include <string>
 #include <variant>
 
+#include "cells.hpp"
 #include "overloaded.hpp"
 #include "position.hpp"
 
@@ -17,6 +18,7 @@ struct ResourceCollectedEvent { Position at; int points; };
 struct EnergyChangedEvent { int previous; int current; };
 struct TrapTriggeredEvent { Position at; };
 struct GoalReachedEvent { Position at; };
+struct SwitchActivatedEvent { Position at; SwitchId id; }; // proyecto 2: se activó A o B
 
 // std::variant: un NavigationEvent guarda exactamente UNO de estos tipos.
 // Así se evita una jerarquía con herencia y el compilador conoce todos los casos posibles.
@@ -26,7 +28,8 @@ using NavigationEvent = std::variant<
     ResourceCollectedEvent,
     EnergyChangedEvent,
     TrapTriggeredEvent,
-    GoalReachedEvent>;
+    GoalReachedEvent,
+    SwitchActivatedEvent>;
 
 // Nombre legible de una acción (para diagnósticos y para describe)
 inline std::string toString(Action action) {
@@ -38,6 +41,11 @@ inline std::string toString(Action action) {
     case Action::wait:  return "esperar";
     }
     return "?";
+}
+
+// Nombre legible de un interruptor
+inline std::string toString(SwitchId id) {
+    return id == SwitchId::A ? "A" : "B";
 }
 
 // --- TEMPLATE VARIÁDICO + FOLD EXPRESSION ---
@@ -86,6 +94,9 @@ template <typename... Events, std::input_iterator Iterator, std::sentinel_for<It
         },
         [](const GoalReachedEvent& e) -> std::string {
             return "Salida en " + toString(e.at);
+        },
+        [](const SwitchActivatedEvent& e) -> std::string {
+            return "Interruptor " + toString(e.id) + " activado en " + toString(e.at);
         },
     }, event);
 }

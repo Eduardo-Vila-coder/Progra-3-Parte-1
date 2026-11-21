@@ -15,6 +15,10 @@ struct Observation {
     std::size_t collectedResources{};
     std::size_t turn{};
     std::vector<Action> availableActions;
+    // --- Proyecto 2: interruptores ---
+    bool hasSwitches{false};   // el mapa tiene los interruptores A y B
+    bool switchAActive{false}; // A ya fue activado
+    bool switchBActive{false}; // B ya fue activado
 };
 
 // Los eventos (MovedEvent, ..., NavigationEvent) viven en events.hpp

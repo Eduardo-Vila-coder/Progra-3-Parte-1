@@ -48,14 +48,21 @@ bool hasWallBorder(const Grid<Cell, Rows, Columns>& grid) {
     return true;
 }
 
-// Deben aparecer los siete tipos de celda (enunciado 5.5)
+// Deben aparecer los siete tipos de celda del proyecto 1 (enunciado 5.5).
+// Switch (interruptores) es del proyecto 2: estos escenarios no lo usan.
 template <std::size_t Rows, std::size_t Columns>
 bool hasAllCellTypes(const Grid<Cell, Rows, Columns>& grid) {
     std::vector<bool> seen(std::variant_size_v<Cell>, false);
     for (const Cell& cell : grid) {
         seen[cell.index()] = true;
     }
-    return std::all_of(seen.begin(), seen.end(), [](bool value) { return value; });
+    const std::size_t switchIndex = Cell{Switch{}}.index();
+    for (std::size_t index = 0; index < seen.size(); ++index) {
+        if (index != switchIndex && !seen[index]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 int main() {

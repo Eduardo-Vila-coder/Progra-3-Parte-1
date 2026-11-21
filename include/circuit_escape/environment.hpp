@@ -40,9 +40,10 @@ private:
     EndReason endReason_{EndReason::none};
 
     // Evalúa las condiciones de término respetando la precedencia del enunciado:
-    // goalReached (en la salida y con energía) > noEnergy > turnLimit
+    // goalReached (en la salida, con energía y con A y B activados) > noEnergy > turnLimit
+    // Pisar la salida antes de activar ambos interruptores no termina la partida (proyecto 2, 3.1).
     EndReason evaluateEnd() const {
-        if (std::holds_alternative<Exit>(initialGrid.at(agent_)) && energy_ > 0) {
+        if (std::holds_alternative<Exit>(initialGrid.at(agent_)) && energy_ > 0 && switchesReady()) {
             return EndReason::goalReached;
         }
         if (energy_ == 0) {
@@ -75,6 +76,36 @@ private:
         });
         std::size_t index = static_cast<std::size_t>(std::distance(initialGrid.begin(), it));
         return Position{index / Columns, index % Columns};
+    }
+
+    // --- INTERRUPTORES A Y B (proyecto 2, Cristhian) ---
+    // Cuántas casillas del tablero tienen el interruptor indicado
+    std::size_t countSwitches(SwitchId id) const {
+        return static_cast<std::size_t>(std::count_if(initialGrid.begin(), initialGrid.end(), [id](const Cell& cell) {
+            const Switch* candidate = std::get_if<Switch>(&cell);
+            return candidate != nullptr && candidate->id == id;
+        }));
+    }
+    // Los mapas del proyecto 1 no tienen interruptores: ahí la salida funciona como antes
+    bool hasSwitches() const {
+        return countSwitches(SwitchId::A) > 0;
+    }
+    // La salida permite escapar solo con A y B activados (o si el mapa no tiene interruptores)
+    bool switchesReady() const {
+        return !hasSwitches() || (isSwitchActive(SwitchId::A) && isSwitchActive(SwitchId::B));
+    }
+    // Paso 4 del turno (proyecto 2, 3.2): si el agente terminó el turno sobre un interruptor
+    // desactivado, se activa y queda así el resto de la partida. Cuando se agregue el vigilante,
+    // su movimiento y la comprobación de captura van ANTES de esta llamada.
+    // Con la energía agotada el turno termina en derrota y ya no se activa nada.
+    void activateSwitch(std::vector<NavigationEvent>& events) {
+        if (energy_ == 0) {
+            return;
+        }
+        if (Switch* current = std::get_if<Switch>(&initialGrid.at(agent_)); current != nullptr && !current->active) {
+            current->active = true;
+            appendEvents(events, SwitchActivatedEvent{agent_, current->id});
+        }
     }
 
     // --- ENERGÍA E INTERACCIONES (Cristhian) ---
@@ -116,6 +147,7 @@ private:
             [](Wall&) {},          // nunca se entra a un muro
             [](RoughTerrain&) {},  // su costo ya se cobró al entrar
             [](Exit&) {},          // la victoria la decide checkEnd
+            [](Switch&) {},        // se activa al cerrar el turno (activateSwitch)
             [this, &events](ResourceCell<int>& resource) {
                 resource.collected = true;               // se recoge una sola vez
                 score_ += rules_.reward;
@@ -156,6 +188,12 @@ private:
         });
         if (exits != 1) {
             throw std::invalid_argument("Error: El tablero debe tener exactamente una salida");
+        }
+        // Proyecto 2: un interruptor A y uno B (o ninguno, en los mapas del proyecto 1)
+        const std::size_t switchesA = countSwitches(SwitchId::A);
+        const std::size_t switchesB = countSwitches(SwitchId::B);
+        if (switchesA > 1 || switchesB > 1 || switchesA != switchesB) {
+            throw std::invalid_argument("Error: El tablero debe tener un interruptor A y uno B");
         }
     }
 
@@ -227,13 +265,25 @@ public:
     }
 
     [[nodiscard]] std::uint32_t seed() const noexcept { return seed_; }
+    // true si el interruptor indicado existe y ya fue activado
+    [[nodiscard]] bool isSwitchActive(SwitchId id) const {
+        const auto it = std::find_if(initialGrid.begin(), initialGrid.end(), [id](const Cell& cell) {
+            const Switch* candidate = std::get_if<Switch>(&cell);
+            return candidate != nullptr && candidate->id == id;
+        });
+        return it != initialGrid.end() && std::get<Switch>(*it).active;
+    }
 
     // Límite de turnos de la partida (la consola lo muestra en la barra de estado: "Turno 27/180")
     [[nodiscard]] std::size_t maxTurns() const noexcept { return turnLimit; }
 
     [[nodiscard]] Observation state() const {
-        return Observation{agent_, goalPosition(), energy_, maxEnergy_, score_,
-                           collectedResources_, turn_, availableActions()};
+        Observation observation{agent_, goalPosition(), energy_, maxEnergy_, score_,
+                                collectedResources_, turn_, availableActions()};
+        observation.hasSwitches = hasSwitches();
+        observation.switchAActive = isSwitchActive(SwitchId::A);
+        observation.switchBActive = isSwitchActive(SwitchId::B);
+        return observation;
     }
 
     [[nodiscard]] std::vector<Action> availableActions() const {
@@ -315,6 +365,8 @@ public:
             }
         }
 
+        // Activamos el interruptor de destino (proyecto 2, paso 4 del turno)
+        activateSwitch(events);
         // Comprobamos las condiciones de término (último paso de la resolución)
         checkEnd(events);
 

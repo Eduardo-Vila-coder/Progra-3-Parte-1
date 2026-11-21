@@ -94,6 +94,10 @@ add_executable(ui_test tests/ui_test.cpp)
 target_link_libraries(ui_test PRIVATE circuit_escape_ui)
 add_test(NAME UiTest COMMAND ui_test)
 
+add_executable(switches_test tests/switches_test.cpp)
+target_link_libraries(switches_test PRIVATE circuit_escape_core)
+add_test(NAME SwitchesTest COMMAND switches_test)
+
 add_executable(map_generation_test tests/map_generation/map_generation_test.cpp)
 target_link_libraries(map_generation_test PRIVATE circuit_escape_core)
 add_test(NAME MapGenerationTest COMMAND map_generation_test)

@@ -28,8 +28,25 @@ struct Trap
 struct Exit // salida
 {
 };
+
+// --- INTERRUPTORES (proyecto 2, secciones 1 y 3.1) ---
+// Identifica a cada uno de los dos interruptores del mapa
+enum class SwitchId
+{
+    A,
+    B
+};
+
+// Entrar a la casilla activa el interruptor sin acción adicional y queda activado
+// el resto de la partida. Se pueden visitar en cualquier orden. No es consumible:
+// después de activarse se puede seguir pisando (y su casilla conserva el costo de entrada).
+struct Switch
+{
+    SwitchId id{SwitchId::A};
+    bool active{false};
+};
 // std::variant ayudara a almacenar valores que son de varios tipos de datos 
-using Cell = std::variant<Empty, Wall, RoughTerrain, ResourceCell<int>, Battery, Trap, Exit>;
+using Cell = std::variant<Empty, Wall, RoughTerrain, ResourceCell<int>, Battery, Trap, Exit, Switch>;
 /*
 especializaciones
 */
@@ -41,7 +58,7 @@ especializaciones
 //  - spent(c):    si esa celda consumible ya fue usada
 // Los costos y recompensas NO están aquí: son datos de GameRules (perfiles de dificultad).
 
-// Plantilla general: celdas permanentes y transitables (Empty, RoughTerrain, Trap, Exit)
+// Plantilla general: celdas permanentes y transitables (Empty, RoughTerrain, Trap, Exit, Switch)
 template <typename CellType>
 struct CellTraits
 {
