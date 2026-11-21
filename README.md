@@ -1,11 +1,17 @@
 # Circuito de Escape
 
-**CS2013 — Programación III · UTEC · 2026-2 · Proyecto 1**
+**CS2013 — Programación III · UTEC · 2026-2 · Proyecto 2**
 
 Motor de un juego de navegación por turnos en C++20. Un agente recorre una cuadrícula de 20 × 30,
 evita obstáculos, administra su energía, recoge recursos y debe llegar a la salida antes de quedarse
 sin energía o superar el límite de turnos. El motor está separado de la interfaz: se puede jugar en
 consola (FTXUI) o dejar que juegue un controlador automático, y todas las reglas se prueban sin consola.
+
+**Proyecto 2** amplía el juego: el jugador debe activar los **interruptores A y B** (en cualquier orden)
+antes de escapar, un **vigilante** lo persigue con **BFS**, los mapas se generan con **Kruskal** y se
+validan con **Dijkstra**, y un **instalador** distribuye el juego y el generador de mapas.
+Por indicación del profesor, el tablero mantiene un tamaño fijo y no se exige reproducir una
+secuencia ganadora guardada.
 
 ## Integrantes
 
@@ -52,6 +58,28 @@ cmake --build build --config Debug
 Con Visual Studio los ejecutables quedan en `build\Debug\`; con MinGW o Ninja, en `build\`.
 En CLion basta con abrir la carpeta (compila en `cmake-build-debug\`).
 
+## Reglas del proyecto 2
+
+**Objetivo:** activar los interruptores A y B, en cualquier orden, y después llegar a la salida con
+energía positiva, sin ser capturado y dentro del límite de turnos.
+
+| Elemento | Regla |
+|---|---|
+| Interruptores A y B | Entrar a su casilla los activa sin acción adicional y quedan activados toda la partida. |
+| Salida | Se puede pisar antes, pero solo permite escapar con A y B activados. |
+| Vigilante | Conoce la posición actual del jugador y lo persigue por el camino con menos movimientos (BFS). Respeta muros y bordes, no consume baterías ni recursos y no gasta energía del jugador. Si no hay camino, espera. |
+
+**Orden de cada turno** (los turnos se cuentan desde 1):
+
+1. Actúa el jugador (mueve o espera; el motor aplica costos e interacciones).
+2. Si el jugador entró a la casilla del vigilante, es capturado.
+3. Actúa el vigilante: en turnos **pares** recalcula con BFS y avanza una casilla; en impares se queda quieto.
+4. Captura o energía agotada: derrota. En otro caso se activa el interruptor de destino y se comprueba el escape.
+
+La captura tiene prioridad sobre el escape y el último turno permitido cuenta. El vigilante desempata
+rutas con un orden fijo de vecinos (derecha, arriba, abajo, izquierda), así que la persecución es reproducible.
+Los mapas sin interruptores ni vigilante (los del proyecto 1) se juegan con las reglas originales.
+
 ## Pruebas
 
 ```bash
@@ -64,10 +92,14 @@ ctest --test-dir build -C Debug --output-on-failure   # Windows con Visual Studi
 | `grid_test` | acceso válido e inválido, bordes y esquinas, versiones const, iteradores y orden por filas |
 | `environment_test` | acciones disponibles, movimientos, perfiles, término y precedencia, precondiciones del constructor, `CellTraits` (transitable y consumible) |
 | `interactions_test` | costos, recurso, batería, trampa y límites de energía |
-| `events_test` | los 6 tipos de evento, `std::visit`, fold expressions, `countEvents` con varios contenedores |
+| `events_test` | los tipos de evento, `std::visit`, fold expressions, `countEvents` con varios contenedores |
 | `controllers_test` | `bestBy`, políticas aleatoria y heurística, concept `NavigationPolicy`, `HumanController` y colección polimórfica de `IController` |
 | `scenarios_test` | carga de mapas, los dos escenarios de 20 × 30 y sus rutas comprobadas |
 | `simulation_test` | `reset(seed)` y simulación reproducible con semilla fija |
+| `switches_test` | **proyecto 2:** activación de A y B en ambos órdenes, salida anticipada sin victoria, persistencia, `reset`, energía agotada, último turno, validación del tablero y símbolos `a`/`b` |
+| `bfs_test` | **proyecto 2:** BFS propio: menor cantidad de movimientos, desempate fijo, muros, destino inalcanzable u origen igual al destino |
+| `guard_test` | **proyecto 2:** vigilante: avanza solo en turnos pares, recalcula hacia el jugador, capturas, prioridad de la captura sobre el escape, no consume baterías, espera sin camino, `reset` y validaciones |
+| `map_generation_test` | **proyecto 2:** `DisjointSet`, `MapGraph`, Kruskal (árbol y aperturas adicionales, desempate, semilla) |
 | `ui_test` | traducción de teclas, `GameSession` (tecla desconocida sin modificar el entorno, modo humano y automático, resultado final visible), emoji/ASCII de cada celda, render de 20 × 30, pie con el último evento relevante |
 
 Las pruebas del motor no leen `std::cin` ni escriben en `std::cout`; solo `ui_test` se enlaza con FTXUI.
@@ -83,7 +115,7 @@ lugar de `Action`, así que `BadPolicy` no satisface el concept.
 ## Ejecución
 
 ```text
-navigation_game [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2]
+escape_circuit [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2]
                 [--controller human|random|heuristic] [--seed N] [--headless]
 ```
 
@@ -113,28 +145,30 @@ comando muestra un mensaje y no consume turno.
 
 **Linux / macOS**
 ```bash
-./build/navigation_game                                          # jugar: emoji, standard, escenario 1
-./build/navigation_game --ascii --difficulty hard --scenario 2   # jugar en ASCII
-./build/navigation_game --controller heuristic --scenario 2      # ver jugar a la heurística
-./build/navigation_game --controller random --seed 7 --headless  # simulación reproducible
+./build/escape_circuit                                          # jugar: emoji, standard, escenario 1
+./build/escape_circuit --ascii --difficulty hard --scenario 2   # jugar en ASCII
+./build/escape_circuit --controller heuristic --scenario 2      # ver jugar a la heurística
+./build/escape_circuit --controller random --seed 7 --headless  # simulación reproducible
 ```
 
 **Windows (PowerShell o Command Prompt)**
 ```powershell
-.\build\navigation_game.exe
-.\build\navigation_game.exe --controller heuristic --scenario 2 --headless
+.\build\escape_circuit.exe
+.\build\escape_circuit.exe --controller heuristic --scenario 2 --headless
 ```
-(con Visual Studio: `.\build\Debug\navigation_game.exe`; con CLion: `.\cmake-build-debug\navigation_game.exe`)
+(con Visual Studio: `.\build\Debug\escape_circuit.exe`; con CLion: `.\cmake-build-debug\escape_circuit.exe`)
+
+El generador de mapas `map_generator` se compila automáticamente en cuanto existe `app/map_generator_main.cpp`.
 
 Salida del modo `--headless`:
 ```text
-$ navigation_game --controller heuristic --scenario 2 --headless
+$ escape_circuit --controller heuristic --scenario 2 --headless
 Semilla 42: ¡Partida completada! Turnos 31 | Energía 32 | Recursos 0 | Puntaje 0
 ```
 
 **Notas para Windows**
 - Desde CLion, la ventana *Run* no es una terminal real y FTXUI solo dibuja la primera línea. Activa
-  *Run in external console* en la configuración de `navigation_game` o ejecútalo desde una terminal.
+  *Run in external console* en la configuración de `escape_circuit` o ejecútalo desde una terminal.
 - Si el `.exe` se cierra sin mostrar nada al ejecutarlo desde PowerShell, probablemente hay otro MinGW
   en el `PATH` con DLL de otra versión. Pon primero en el `PATH` la carpeta `bin` del compilador
   con el que se construyó el proyecto.
@@ -150,9 +184,12 @@ Semilla 42: ¡Partida completada! Turnos 31 | Energía 32 | Recursos 0 | Puntaje
 | 💎 | `R` | recurso |
 | ⚡ | `B` | batería |
 | 💥 | `T` | trampa |
-| 🏁 | `S` | salida |
+| 🏁 | `S` | salida (requiere A y B activados) |
+| 🔒 / 🔓 | `a` `b` / `*` | interruptor A o B pendiente / activado (proyecto 2) |
+| 👮 | `V` | vigilante (proyecto 2) |
 
-La pantalla muestra la barra de estado (turno, energía, puntaje, recursos), la regla de coordenadas,
+La pantalla muestra la barra de estado (turno, energía, puntaje, recursos y, en el proyecto 2, el estado
+de A y B y si el vigilante avanza en el próximo turno), la regla de coordenadas,
 las 20 filas del tablero y un pie con el último evento relevante y la ayuda breve (cabe en 80 columnas). Cada celda y cada coordenada
 ocupa exactamente 2 columnas, así que cada fila mide 62 columnas.
 
@@ -180,6 +217,10 @@ Las pruebas de estos valores están en `environment_test` ("carga perfiles").
 Mapas de texto de 20 líneas × 30 caracteres en `assets/maps/`, con los símbolos ASCII de la tabla
 anterior (`@` marca el inicio del agente).
 
+**Símbolos del proyecto 2:** `a` y `b` son los interruptores A y B (en minúscula, porque `B` es la
+batería) y `V` marca el inicio del vigilante (su casilla es un espacio libre). Un mapa debe tener un
+`a` y un `b`, o ninguno, y como máximo un `V`. Si el mapa tiene `V`, el juego crea el vigilante con BFS.
+
 | Escenario | Descripción | Solución comprobada |
 |---|---|---|
 | `scenario_01.txt` | Reproducción del ejemplo del enunciado (página 11) | `easy` y `standard`, por dos rutas distintas. **No** es posible en `hard`: la ruta más corta necesita 44 movimientos y solo hay 40 + 2 de energía |
@@ -187,6 +228,44 @@ anterior (`@` marca el inicio del agente).
 
 Las rutas están verificadas en `tests/scenarios_test.cpp`. La política heurística completa el escenario 2
 en `standard`; en el escenario 1 se queda sin energía (el enunciado no exige que encuentre el camino óptimo).
+
+## Instalación (proyecto 2)
+
+El instalador de Windows (NSIS, generado con CPack) incluye `escape_circuit`, `map_generator`
+(cuando existe) y los escenarios de `assets/maps/`. Los programas se enlazan de forma estática, así
+que la PC de destino no necesita compilar ni instalar nada más. Detalles en
+[`installer/README.md`](installer/README.md).
+
+**Generar el instalador** (requiere CMake, el compilador de CLion y NSIS 3 en el `PATH`):
+```powershell
+.\installer\build_installer.bat
+```
+Deja `dist\CircuitoDeEscape-2.0.0-Windows.exe` (instalador) y `dist\CircuitoDeEscape-2.0.0-Windows.zip` (portable).
+
+**Instalar:** ejecutar `CircuitoDeEscape-2.0.0-Windows.exe` (carpeta por defecto
+`C:\Program Files\Circuito de Escape`).
+
+**Ejecutar:** menú Inicio → *Circuito de Escape*, o desde una terminal:
+```powershell
+& "C:\Program Files\Circuito de Escape\bin\escape_circuit.exe" --controller heuristic --scenario 2 --headless
+```
+El programa instalado busca los mapas en `bin\..\assets\maps`, así que funciona desde cualquier carpeta.
+
+**Desinstalar:** Configuración → Aplicaciones → *Circuito de Escape* → Desinstalar, o el acceso
+*Uninstall* del menú Inicio. Se eliminan los programas, los mapas y los accesos directos.
+
+## Reutilización del proyecto 1
+
+| Componente original | Adaptación | Uso actual | Prueba |
+|---|---|---|---|
+| `Cell` (`std::variant`) y `CellTraits` | nueva celda `Switch` (interruptor A o B) | interruptores del mapa | `switches_test` |
+| `NavigationEnvironment` (`step`, `reset`, `state`, término) | activación de interruptores, salida condicionada, vigilante, captura y nuevo orden del turno | único que modifica la partida | `switches_test`, `guard_test`, `environment_test` |
+| `Observation` y eventos | estado de A y B, posición del vigilante; eventos `SwitchActivatedEvent`, `GuardMovedEvent`, `PlayerCapturedEvent` | interfaz y controladores | `switches_test`, `guard_test`, `events_test` |
+| Concept `NavigationPolicy` + `PolicyController` + `IController` | mismo patrón para el vigilante: `GuardPolicy` + `GuardPolicyController` + `IGuardController` | `BfsGuardPolicy` persigue al jugador | `guard_test` |
+| `Grid` y `Position` | conversión a grafo (`MapGraph`) con índices `fila * columnas + columna` | Kruskal, BFS y Dijkstra | `map_generation_test`, `bfs_test` |
+| Cargador de escenarios | símbolos `a`, `b` y `V`; búsqueda de los mapas junto al programa instalado | juego instalado | `switches_test`, `guard_test`, `scenarios_test` |
+| Consola FTXUI | dibuja interruptores y vigilante, estado en la barra y resultado "Capturado" | partida interactiva | `ui_test` |
+| CMake | dos ejecutables (`escape_circuit`, `map_generator`), reglas de instalación y CPack | instalador | instalación y desinstalación probadas |
 
 ## Contenedores principales
 
@@ -199,6 +278,10 @@ en `standard`; en el escenario 1 se queda sin energía (el enunciado no exige qu
 | `std::unique_ptr<IController>` | controlador automático | dueño único de un objeto polimórfico elegido en ejecución |
 | `std::optional<Action>` | `HumanController` | decisión del teclado pendiente o ausente |
 | `std::mt19937` | `RandomPolicy` | generador con semilla controlable: simulaciones reproducibles |
+| `std::queue<std::size_t>` | BFS (`pathfinding/bfs.hpp`) | cola FIFO: procesa las casillas por niveles de distancia |
+| `std::vector<std::size_t>` | BFS: casilla anterior, camino; `MapGraph`: vecinos | acceso por índice de casilla; la casilla anterior permite reconstruir el camino |
+| `std::shared_ptr<IGuardController>` | vigilante en `NavigationEnvironment` | controlador polimórfico que se comparte si el entorno se copia |
+| `std::set<int>` | `MapSelector` | cuenta los costos distintos de un lote |
 | `std::list`, `std::deque` | pruebas | comprueban que los algoritmos genéricos no dependen del contenedor |
 
 No se usa `std::map` ni `std::unordered_map`: las celdas se indexan por posición directamente en el
@@ -209,10 +292,15 @@ No se usa `std::map` ni `std::unordered_map`: las celdas se indexan por posició
 ```text
 include/circuit_escape/   motor (grid, celdas, posición, reglas, eventos, entorno, controladores,
                           escenarios, simulación) y la cabecera de la interfaz (console_ui.hpp)
-src/                      implementación no genérica: controladores, interfaz FTXUI y GameSession
-app/main.cpp              ejecutable: opciones de línea de comandos, bucle de FTXUI y modo headless
-tests/                    pruebas con assert registradas en CTest (+ tests/negative/)
+  graph/                  MapGraph (conversión desde Grid) y DisjointSet
+  pathfinding/            BFS y resultado de búsqueda (SearchResult)
+  map_generation/         Kruskal, MapBuilder y MapSelector
+  controllers/            controlador del vigilante (GuardPolicy, BfsGuardPolicy)
+src/                      implementación no genérica: controladores, interfaz FTXUI, grafo y selección
+app/main.cpp              juego escape_circuit: opciones, bucle de FTXUI y modo headless
+tests/                    pruebas con assert registradas en CTest (+ pathfinding/, map_generation/, negative/)
 assets/maps/              escenarios de 20 × 30
+installer/                instalador: reglas de CPack/NSIS, script y guía
 docs/                     design.md y contributions.md
 ```
 
@@ -231,10 +319,11 @@ docs/                     design.md y contributions.md
 
 ## Entrega
 
-La entrega es el commit marcado con el tag anotado `proyecto-1-entrega` en la rama `main`:
+La entrega del proyecto 1 es el tag `proyecto-1-entrega`. La del proyecto 2 es el commit marcado con
+el tag anotado `proyecto-2-entrega` en la rama `main`:
 ```bash
-git tag -a proyecto-1-entrega -m "Entrega del proyecto 1"
-git push origin proyecto-1-entrega
+git tag -a proyecto-2-entrega -m "Entrega del proyecto 2"
+git push origin proyecto-2-entrega
 ```
 Antes de crear el tag: clonar el repositorio en una carpeta nueva, seguir solo este README, compilar,
 correr las pruebas y probar la demostración.
