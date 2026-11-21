@@ -31,6 +31,8 @@
 
 #include "circuit_escape/console_ui.hpp"
 #include "circuit_escape/controllers.hpp"
+#include "circuit_escape/controllers/guard_controller.hpp"
+#include "circuit_escape/graph/graph.hpp"
 #include "circuit_escape/environment.hpp"
 #include "circuit_escape/game_rules.hpp"
 #include "circuit_escape/scenario.hpp"
@@ -172,6 +174,13 @@ int main(int argc, char* argv[]) {
     try {
         const auto scenario = loadScenario<20, 30>(scenarioPath(options.scenarioFile));
         DemoEnvironment environment = makeEnvironment(scenario.grid, scenario.start, options.difficulty);
+        // Proyecto 2: si el mapa marca un vigilante ('V'), persigue al jugador con BFS sobre el grafo del mapa
+        if (scenario.guard.has_value()) {
+            using GuardBfs = BfsGuardPolicy<20, 30>;
+            environment.setGuard(*scenario.guard,
+                                 std::make_shared<GuardPolicyController<GuardBfs>>(
+                                     GuardBfs{MapGraph<20, 30>{scenario.grid, GameRules<>{}}}));
+        }
         environment.reset(options.seed);
 
         std::unique_ptr<IController> automatic = makeController(options.controller, options.seed);

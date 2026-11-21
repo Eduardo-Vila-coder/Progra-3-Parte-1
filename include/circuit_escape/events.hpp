@@ -19,6 +19,8 @@ struct EnergyChangedEvent { int previous; int current; };
 struct TrapTriggeredEvent { Position at; };
 struct GoalReachedEvent { Position at; };
 struct SwitchActivatedEvent { Position at; SwitchId id; }; // proyecto 2: se activó A o B
+struct GuardMovedEvent { Position from; Position to; };     // proyecto 2: el vigilante avanzó
+struct PlayerCapturedEvent { Position at; };                // proyecto 2: el vigilante atrapó al jugador
 
 // std::variant: un NavigationEvent guarda exactamente UNO de estos tipos.
 // Así se evita una jerarquía con herencia y el compilador conoce todos los casos posibles.
@@ -29,7 +31,9 @@ using NavigationEvent = std::variant<
     EnergyChangedEvent,
     TrapTriggeredEvent,
     GoalReachedEvent,
-    SwitchActivatedEvent>;
+    SwitchActivatedEvent,
+    GuardMovedEvent,
+    PlayerCapturedEvent>;
 
 // Nombre legible de una acción (para diagnósticos y para describe)
 inline std::string toString(Action action) {
@@ -97,6 +101,12 @@ template <typename... Events, std::input_iterator Iterator, std::sentinel_for<It
         },
         [](const SwitchActivatedEvent& e) -> std::string {
             return "Interruptor " + toString(e.id) + " activado en " + toString(e.at);
+        },
+        [](const GuardMovedEvent& e) -> std::string {
+            return "Vigilante " + toString(e.from) + " -> " + toString(e.to);
+        },
+        [](const PlayerCapturedEvent& e) -> std::string {
+            return "Capturado en " + toString(e.at);
         },
     }, event);
 }

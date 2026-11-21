@@ -17,7 +17,7 @@ using Env = NavigationEnvironment<3, 4>;
 
 // Cuenta cada tipo de evento con std::visit + Overloaded (sin holds_alternative ni if por tipo)
 struct EventCounter {
-    int moved{}, rejected{}, resource{}, energy{}, trap{}, goal{}, switches{};
+    int moved{}, rejected{}, resource{}, energy{}, trap{}, goal{}, switches{}, guard{}, captured{};
 
     void operator()(const NavigationEvent& event) {
         std::visit(Overloaded{
@@ -28,6 +28,8 @@ struct EventCounter {
             [this](const TrapTriggeredEvent&)     { ++trap; },
             [this](const GoalReachedEvent&)       { ++goal; },
             [this](const SwitchActivatedEvent&)   { ++switches; },  // proyecto 2
+            [this](const GuardMovedEvent&)        { ++guard; },     // proyecto 2
+            [this](const PlayerCapturedEvent&)    { ++captured; },  // proyecto 2
         }, event);
     }
 };

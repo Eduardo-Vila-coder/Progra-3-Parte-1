@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <fstream>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -14,6 +15,7 @@
 //   R  recurso              B  batería          T  trampa
 //   S  salida               @  inicio del agente (la celda es un espacio libre)
 //   a  interruptor A        b  interruptor B      (proyecto 2; en minúscula porque B es la batería)
+//   V  inicio del vigilante (proyecto 2; la celda es un espacio libre)
 // Cada línea es una fila y cada carácter una columna.
 
 // Carpeta de los mapas. CMake la define con la ruta absoluta de assets/maps
@@ -42,13 +44,15 @@ template <std::size_t Rows, std::size_t Columns>
 struct Scenario {
     Grid<Cell, Rows, Columns> grid;
     Position start;
+    std::optional<Position> guard; // proyecto 2: inicio del vigilante (si el mapa lo tiene)
 };
 
 // Convierte un símbolo del mapa en su celda
 inline Cell cellFromSymbol(char symbol) {
     switch (symbol) {
     case '.':
-    case '@': return Empty{};
+    case '@':
+    case 'V': return Empty{};
     case '#': return Wall{};
     case '~': return RoughTerrain{};
     case 'R': return ResourceCell<int>{10};
@@ -75,6 +79,7 @@ Scenario<Rows, Columns> scenarioFromLines(const std::vector<std::string>& lines)
     std::size_t exits = 0;
     std::size_t switchesA = 0;
     std::size_t switchesB = 0;
+    std::size_t guards = 0;
 
     for (std::size_t row = 0; row < Rows; ++row) {
         if (lines[row].size() != Columns) {
@@ -93,6 +98,9 @@ Scenario<Rows, Columns> scenarioFromLines(const std::vector<std::string>& lines)
                 ++switchesA;
             } else if (symbol == 'b') {
                 ++switchesB;
+            } else if (symbol == 'V') {
+                scenario.guard = Position{row, column};
+                ++guards;
             }
         }
     }
@@ -106,6 +114,9 @@ Scenario<Rows, Columns> scenarioFromLines(const std::vector<std::string>& lines)
     // Proyecto 2: un interruptor 'a' y uno 'b' (los mapas del proyecto 1 no tienen ninguno)
     if (switchesA > 1 || switchesB > 1 || switchesA != switchesB) {
         throw std::invalid_argument("Escenario: debe haber un interruptor 'a' y uno 'b'");
+    }
+    if (guards > 1) {
+        throw std::invalid_argument("Escenario: debe haber como maximo un vigilante 'V'");
     }
     return scenario;
 }

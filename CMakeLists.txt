@@ -38,10 +38,14 @@ add_library(circuit_escape_core
         include/circuit_escape/graph/graph.hpp
         include/circuit_escape/map_generation/map_builder.hpp
         include/circuit_escape/map_generation/map_selector.hpp
+        include/circuit_escape/pathfinding/search_result.hpp
+        include/circuit_escape/pathfinding/bfs.hpp
+        include/circuit_escape/controllers/guard_controller.hpp
         src/environment.cpp
         src/controllers.cpp
         src/graph/graph.cpp
         src/map_generation/map_selector.cpp
+        src/controllers/guard_controller.cpp
 )
 # Ruta absoluta de los mapas: los escenarios se cargan igual desde cualquier carpeta de compilación
 target_compile_definitions(circuit_escape_core PUBLIC
@@ -97,6 +101,14 @@ add_test(NAME UiTest COMMAND ui_test)
 add_executable(switches_test tests/switches_test.cpp)
 target_link_libraries(switches_test PRIVATE circuit_escape_core)
 add_test(NAME SwitchesTest COMMAND switches_test)
+
+add_executable(bfs_test tests/pathfinding/bfs_test.cpp)
+target_link_libraries(bfs_test PRIVATE circuit_escape_core)
+add_test(NAME BfsTest COMMAND bfs_test)
+
+add_executable(guard_test tests/guard_test.cpp)
+target_link_libraries(guard_test PRIVATE circuit_escape_core)
+add_test(NAME GuardTest COMMAND guard_test)
 
 add_executable(map_generation_test tests/map_generation/map_generation_test.cpp)
 target_link_libraries(map_generation_test PRIVATE circuit_escape_core)

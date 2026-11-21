@@ -2,11 +2,13 @@
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
 #include "cells.hpp"
+#include "controllers/guard_controller.hpp"
 #include "events.hpp"
 #include "game_rules.hpp"
 #include "grid.hpp"
@@ -34,6 +36,51 @@ private:
     std::uint32_t seed_{0}; // Semilla del último reset (simulación reproducible)
 
     std::size_t turn_{0};
+
+    // --- VIGILANTE (proyecto 2, Cristhian) ---
+    // El entorno guarda su posición y es el único que la cambia; el controlador solo propone.
+    std::shared_ptr<IGuardController> guardController_; // nullptr: partida sin vigilante
+    Position guardStart_{};
+    Position guard_{};
+
+    bool hasGuard() const noexcept { return guardController_ != nullptr; }
+    // El jugador y el vigilante ocupan la misma casilla
+    bool guardCaptures() const noexcept { return hasGuard() && guard_ == agent_; }
+
+    // Movimientos legales del vigilante: wait y los pasos que no chocan con muros ni bordes
+    std::vector<Action> guardLegalActions() const {
+        std::vector<Action> actions{Action::wait};
+        for (const Action action : {Action::up, Action::down, Action::left, Action::right}) {
+            const std::optional<Position> next = neighbor(guard_, action);
+            if (next.has_value() && initialGrid.contains(*next) && isTraversable(initialGrid.at(*next))) {
+                actions.push_back(action);
+            }
+        }
+        return actions;
+    }
+
+    // Paso 3 del turno (3.2): en turnos pares el vigilante recalcula y avanza una casilla;
+    // en impares permanece quieto. Una acción que no sea legal se convierte en espera.
+    void moveGuard(std::vector<NavigationEvent>& events) {
+        if (!hasGuard() || turn_ % 2 != 0) {
+            return;
+        }
+        const std::vector<Action> legal = guardLegalActions();
+        const Action proposed = guardController_->selectAction(GuardObservation{guard_, agent_, turn_}, legal);
+        if (proposed == Action::wait || std::find(legal.begin(), legal.end(), proposed) == legal.end()) {
+            return;
+        }
+        const Position from = guard_;
+        guard_ = *neighbor(guard_, proposed);
+        appendEvents(events, GuardMovedEvent{from, guard_});
+    }
+
+    // La captura termina la partida y tiene prioridad sobre el escape
+    void capture(std::vector<NavigationEvent>& events) {
+        endReason_ = EndReason::captured;
+        active_ = false;
+        appendEvents(events, PlayerCapturedEvent{agent_});
+    }
 
     // --- CONDICIONES DE TÉRMINO ---
     // Motivo por el que terminó la partida (none = sigue activa)
@@ -262,9 +309,34 @@ public:
         turn_ = 0;
         active_ = true;
         endReason_ = EndReason::none;
+        guard_ = guardStart_; // el vigilante vuelve a su casilla inicial
     }
 
     [[nodiscard]] std::uint32_t seed() const noexcept { return seed_; }
+
+    // Proyecto 2: agrega el vigilante. Debe empezar en una casilla libre del tablero,
+    // distinta del inicio del jugador. El controlador decide cómo perseguir; el entorno valida.
+    void setGuard(Position start, std::shared_ptr<IGuardController> controller) {
+        if (controller == nullptr) {
+            throw std::invalid_argument("Error: El vigilante necesita un controlador");
+        }
+        if (!originalGrid_.contains(start) || !std::holds_alternative<Empty>(originalGrid_.at(start))) {
+            throw std::invalid_argument("Error: El vigilante debe empezar en una casilla libre");
+        }
+        if (start == this->start) {
+            throw std::invalid_argument("Error: El vigilante no puede empezar en el inicio del jugador");
+        }
+        guardController_ = std::move(controller);
+        guardStart_ = start;
+        guard_ = start;
+    }
+    // Posición actual del vigilante (nullopt si la partida no tiene vigilante)
+    [[nodiscard]] std::optional<Position> guardPosition() const {
+        if (!hasGuard()) {
+            return std::nullopt;
+        }
+        return guard_;
+    }
     // true si el interruptor indicado existe y ya fue activado
     [[nodiscard]] bool isSwitchActive(SwitchId id) const {
         const auto it = std::find_if(initialGrid.begin(), initialGrid.end(), [id](const Cell& cell) {
@@ -283,6 +355,9 @@ public:
         observation.hasSwitches = hasSwitches();
         observation.switchAActive = isSwitchActive(SwitchId::A);
         observation.switchBActive = isSwitchActive(SwitchId::B);
+        observation.hasGuard = hasGuard();
+        observation.guard = guard_;
+        observation.guardMovesNextTurn = hasGuard() && !isFinished() && (turn_ + 1) % 2 == 0;
         return observation;
     }
 
@@ -365,10 +440,22 @@ public:
             }
         }
 
-        // Activamos el interruptor de destino (proyecto 2, paso 4 del turno)
-        activateSwitch(events);
-        // Comprobamos las condiciones de término (último paso de la resolución)
-        checkEnd(events);
+        // --- Proyecto 2: resto del turno (3.2) ---
+        // 2. Captura inicial: el jugador entró a la casilla del vigilante
+        bool captured = guardCaptures();
+        // 3. Actúa el vigilante (solo en turnos pares)
+        if (!captured) {
+            moveGuard(events);
+            captured = guardCaptures();
+        }
+        // 4. Captura o energía agotada: derrota. En otro caso, se activa el interruptor
+        //    de destino y se comprueba el escape. La captura tiene prioridad sobre el escape.
+        if (captured) {
+            capture(events);
+        } else {
+            activateSwitch(events);
+            checkEnd(events);
+        }
 
         return StepResult{state(), std::move(events), isFinished(), endReason_};
     }
