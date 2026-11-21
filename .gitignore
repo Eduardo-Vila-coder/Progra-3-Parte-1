@@ -1,5 +1,7 @@
 # Carpetas de compilación e IDE
 build/
+build-release/
+dist/
 cmake-build-debug/
 cmake-build-release/
 .idea/

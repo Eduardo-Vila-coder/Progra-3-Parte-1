@@ -1,9 +1,11 @@
 #pragma once
 #include <cstddef>
+#include <filesystem>
 #include <fstream>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 #include "cells.hpp"
 #include "grid.hpp"
@@ -34,9 +36,34 @@ inline const std::string scenario01File = "scenario_01.txt";
 // Se puede completar en easy, standard y hard.
 inline const std::string scenario02File = "scenario_02.txt";
 
+// Carpeta de mapas usada en tiempo de ejecución. Por defecto es la del código fuente (la define CMake),
+// así funcionan las pruebas y el juego compilado en CLion. El juego INSTALADO no tiene el código fuente:
+// main la cambia por la carpeta assets/maps que el instalador copia junto al programa.
+inline std::string& mapsDirectory() {
+    static std::string directory = CIRCUIT_ESCAPE_MAPS_DIR;
+    return directory;
+}
+
+inline void setMapsDirectory(std::string directory) {
+    mapsDirectory() = std::move(directory);
+}
+
+// Busca assets/maps junto al ejecutable (bin/assets/maps) o en la carpeta de instalación
+// (bin/../assets/maps). Devuelve nullopt si no la encuentra.
+inline std::optional<std::filesystem::path> findMapsNextTo(const std::filesystem::path& executable) {
+    const std::filesystem::path folder = executable.parent_path();
+    for (const std::filesystem::path& candidate : {folder / "assets" / "maps", folder.parent_path() / "assets" / "maps"}) {
+        std::error_code error;
+        if (std::filesystem::is_directory(candidate, error)) {
+            return candidate;
+        }
+    }
+    return std::nullopt;
+}
+
 // Ruta completa de un archivo dentro de la carpeta de mapas
 inline std::string scenarioPath(const std::string& fileName) {
-    return std::string(CIRCUIT_ESCAPE_MAPS_DIR) + "/" + fileName;
+    return mapsDirectory() + "/" + fileName;
 }
 
 // Resultado de cargar un escenario: el tablero y la posición inicial del agente

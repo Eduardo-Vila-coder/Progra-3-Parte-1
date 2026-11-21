@@ -5,7 +5,7 @@
 // pide una acción (humana o automática), llama a step y vuelve a dibujar.
 //
 // Uso:
-//   navigation_game [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2]
+//   escape_circuit [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2]
 //                   [--controller human|random|heuristic] [--seed N] [--headless]
 //
 //   --ascii       dibuja con caracteres ASCII en vez de emojis
@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -64,8 +65,8 @@ struct Options {
 };
 
 void printUsage() {
-    std::cout << "Uso: navigation_game [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2]\n"
-                 "                     [--controller human|random|heuristic] [--seed N] [--headless]\n";
+    std::cout << "Uso: escape_circuit [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2]\n"
+                 "                      [--controller human|random|heuristic] [--seed N] [--headless]\n";
 }
 
 // Lee los argumentos. Lanza std::invalid_argument si alguno no es válido.
@@ -155,12 +156,31 @@ int runInteractive(DemoEnvironment& environment, std::unique_ptr<IController> au
     return 0;
 }
 
+// Ruta completa del ejecutable que se está ejecutando (para ubicar los mapas instalados)
+std::filesystem::path executablePath(const char* argv0) {
+#ifdef _WIN32
+    wchar_t buffer[MAX_PATH];
+    const DWORD length = GetModuleFileNameW(nullptr, buffer, MAX_PATH);
+    if (length > 0 && length < MAX_PATH) {
+        return std::filesystem::path(buffer);
+    }
+#endif
+    std::error_code error;
+    const std::filesystem::path path = std::filesystem::weakly_canonical(argv0, error);
+    return error ? std::filesystem::path(argv0) : path;
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);  // emojis y tildes en PowerShell / cmd.exe
 #endif
+
+    // Juego instalado: usar los mapas que el instalador copió junto al programa (proyecto 2, 8.1)
+    if (const auto installedMaps = findMapsNextTo(executablePath(argv[0])); installedMaps.has_value()) {
+        setMapsDirectory(installedMaps->string());
+    }
 
     Options options;
     try {
