@@ -5,7 +5,7 @@
 #include <utility>
 
 #include "circuit_escape/overloaded.hpp"
-
+#include "circuit_escape/pathfinding/config_algoritmo.hpp"
 namespace {
 // Tablero de la demostración (enunciado 5.1 y 5.8)
 constexpr std::size_t boardRows = 20;
@@ -304,6 +304,19 @@ KeyResult GameSession::handle(const ftxui::Event &event)
                           {
                               showHelp_ = !showHelp_;
                               return KeyResult::handled;
+                          },
+                          [this](Calculo_ruta){
+                            if (environment_.isFinished())
+                                {
+                                  message_ = finalResult_;
+                                  return KeyResult::handled;
+                                }
+                            //NOTE:configuracion por donde pasa la cantidad de pasos
+                            Config_algoritmo config;
+                            message_=  config.calculo(environment_.grid(),
+                                  environment_.getAgentPosition(),
+                                  environment_.state().goal,environment_.maxTurns(),environment_.getEnergy());
+                            return KeyResult::handled;
                           },
                           [this](Action action)
                           {
