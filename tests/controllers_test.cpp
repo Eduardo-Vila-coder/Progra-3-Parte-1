@@ -173,6 +173,32 @@ int main() {
         assert(policy.selectAction(observationAt(Position(0, 1), Position(0, 0)), legal) == Action::down);
     }
 
+    // Prueba 15b (proyecto 2): con interruptores pendientes va primero al más cercano y luego a la salida
+    {
+        // Tablero 3 x 5, fila 1:  (1,0)=A  (1,1)=agente  (1,2)=Salida  (1,3)=B
+        Grid<Cell, 3, 5> grid{};
+        grid.at({1, 0}) = Switch{SwitchId::A};
+        grid.at({1, 2}) = Exit{};
+        grid.at({1, 3}) = Switch{SwitchId::B};
+        NavigationEnvironment<3, 5> environment{grid, Position{1, 1}, 40, 100};
+
+        // A está a 1 paso y B a 2: primero va a A (izquierda), aunque la salida esté a la derecha
+        HeuristicPolicy first;
+        assert(first.selectAction(environment.state(), allActions) == Action::left);
+
+        // Con A activado, el interruptor pendiente más cercano es B (derecha)
+        (void)environment.step(Action::left);                      // entra a A
+        (void)environment.step(Action::right);                     // vuelve al inicio
+        HeuristicPolicy second;
+        assert(second.selectAction(environment.state(), allActions) == Action::right);
+
+        // Con A y B activados, la salida (los dos interruptores ya no cuentan)
+        (void)environment.step(Action::right);                     // pisa la salida
+        (void)environment.step(Action::right);                     // entra a B
+        HeuristicPolicy third;
+        assert(third.selectAction(environment.state(), allActions) == Action::left);   // hacia la salida (1,2)
+    }
+
     // Prueba 16: Sin acciones legales lanza std::invalid_argument
     {
         HeuristicPolicy policy;
