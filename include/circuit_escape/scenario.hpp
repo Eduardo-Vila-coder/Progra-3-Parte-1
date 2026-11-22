@@ -18,7 +18,8 @@
 //   S  salida               @  inicio del agente (la celda es un espacio libre)
 //   a  interruptor A        b  interruptor B      (proyecto 2; en minúscula porque B es la batería)
 //   V  inicio del vigilante (proyecto 2; la celda es un espacio libre)
-// Cada línea es una fila y cada carácter una columna.
+// Cada línea es una fila y cada carácter una columna. Las líneas que empiezan con ';'
+// son comentarios con metadatos (semilla, id, nivel, costo mínimo, ...) y se ignoran.
 
 // Carpeta de los mapas. CMake la define con la ruta absoluta de assets/maps
 // para que funcione sin importar desde qué carpeta se ejecute el programa o las pruebas.
@@ -161,6 +162,11 @@ Scenario<Rows, Columns> loadScenario(const std::string& path) {
     while (std::getline(file, line)) {
         if (!line.empty() && line.back() == '\r') {
             line.pop_back(); // fin de línea CRLF (Windows)
+        }
+        // Los mapas generados por MapBatchRunner pueden llevar metadatos en
+        // comentarios ';'. Se ignoran para que el tablero siga siendo Rows x Columns.
+        if (!line.empty() && line.front() == ';') {
+            continue;
         }
         if (!line.empty()) {
             lines.push_back(line);

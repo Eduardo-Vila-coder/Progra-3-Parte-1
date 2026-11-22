@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "circuit_escape/map_generation/map_builder.hpp"
+#include "circuit_escape/map_generation/map_layout.hpp"
 #include "circuit_escape/map_generation/map_selector.hpp"
 #include "circuit_escape/pathfinding/logica_algoritmo.hpp"
 
@@ -59,9 +60,9 @@ private:
 
 // Validador real para los mapas de MapBuilder: usa el Dijkstra de Mathius sobre el
 // grafo implícito del tablero. Como el generador solo produce celdas Empty/Wall,
-// entrar en cualquier casilla cuesta 1; el costo devuelto es el de ir de la esquina
-// superior izquierda a la inferior derecha. Es el adaptador que sustituye al validador
-// falso de las pruebas una vez que la API real de Dijkstra está disponible.
+// entrar en cualquier casilla cuesta 1; el costo devuelto es el de ir de la primera
+// sala (0,0) a la última sala (fila/columna par), que es donde se coloca la salida.
+// Es el adaptador que sustituye al validador falso de las pruebas.
 template <std::size_t Rows, std::size_t Columns>
 class MazeMapValidator : public IMapValidator<Rows, Columns>
 {
@@ -98,9 +99,15 @@ public:
         };
 
         Nodes nodes{map.grid};
+        const auto start = nodes.construir(0, 0);
+        const auto goal = nodes.construir(map_layout::lastRoomIndex(Rows),
+                                          map_layout::lastRoomIndex(Columns));
+        if (!start || !start->pisable || !goal || !goal->pisable) {
+            return ValidationResult{map.id, -1, false, "inicio o salida no transitables"};
+        }
+
         std::vector<std::pair<int, int>> path;
-        const int cost = Disjtrak{}.buscar(nodes, *nodes.construir(0, 0),
-                                           *nodes.construir(Rows - 1, Columns - 1), path);
+        const int cost = Disjtrak{}.buscar(nodes, *start, *goal, path);
         if (cost < 0) {
             return ValidationResult{map.id, -1, false, "la salida no es alcanzable"};
         }
