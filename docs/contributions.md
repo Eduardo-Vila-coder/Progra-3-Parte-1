@@ -48,6 +48,9 @@ historial del repositorio (`git log --author="<nombre>"`) y en los pull requests
 - Pruebas `grid_test.cpp` y `ui_test.cpp`, y registro de `simulation_test` en CTest.
 - `README.md` y `docs/design.md`.
 - Lógica de los interruptores A y B y de la salida.
+- Ubicación de la salida y del vigilante en los mapas generados para que cada nivel se pueda ganar
+  en las tres dificultades (`map_layout::winnableWithGuard`), validación con la energía de `hard`,
+  regeneración de los tres niveles y `guard_placement_test.cpp`.
 - Lógica del comportamiento del vigilante.
 - Instalador de los dos ejecutables (generador de mapas y juego) y prueba de su correcta desinstalación.
 - Actualización del `README.md` con todos los cambios del proyecto 2.
