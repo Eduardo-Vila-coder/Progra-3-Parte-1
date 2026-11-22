@@ -280,6 +280,33 @@ void GameSession::decideWith(IController &controller)
     play(controller.selectAction(observation, observation.availableActions)); // despacho dinámico
 }
 
+// La tabla se calcula al abrir (y al volver a dibujar) la ayuda: refleja la energía
+// y los interruptores activos en ese momento, no un texto estático.
+std::vector<std::string> GameSession::energyHelpLines() const
+{
+    Config_algoritmo config;
+    const auto ruta = config.ayuda(environment_.grid(),
+                                   environment_.getAgentPosition(),
+                                   environment_.getEnergy(),
+                                   environment_.maxTurns());
+    return Config_algoritmo::lineasAyuda(ruta);
+}
+
+ftxui::Element GameSession::energyHelpElement() const
+{
+    using namespace ftxui;
+    Elements filas;
+    filas.push_back(text(" AYUDA DE ENERGÍA (Dijkstra) ") | bold | center);
+    filas.push_back(separator());
+    for (const std::string &linea : energyHelpLines())
+    {
+        filas.push_back(text(linea));
+    }
+    filas.push_back(separator());
+    filas.push_back(text("H, P o Esc para volver a jugar") | dim);
+    return vbox(std::move(filas)) | border;
+}
+
 KeyResult GameSession::handle(const ftxui::Event &event)
 {
     if (showRouteHelp_ && event == ftxui::Event::Escape)
@@ -313,9 +340,17 @@ KeyResult GameSession::handle(const ftxui::Event &event)
                           { return KeyResult::quit; },
                           [this](HelpCommand)
                           {
-                            if (showRouteHelp_) { showRouteHelp_ = false; return KeyResult::handled; }
-                              showHelp_ = !showHelp_;
-                              return KeyResult::handled;
+                            // H cierra la tabla si está abierta; si no, abre la ayuda
+                            // completa (tabla de energía + guía de controles).
+                            if (showRouteHelp_)
+                            {
+                                showRouteHelp_ = false;
+                                message_ = environment_.isFinished() ? finalResult_
+                                                                     : (automatic_ ? automaticHint : "");
+                                return KeyResult::handled;
+                            }
+                            showHelp_ = !showHelp_;
+                            return KeyResult::handled;
                           },
                           [this](Calculo_ruta){
                             if (environment_.isFinished())
@@ -329,16 +364,10 @@ KeyResult GameSession::handle(const ftxui::Event &event)
                                     message_ = automatic_ ? automaticHint : "";
                                     return KeyResult::handled;
                                 }
-                            //NOTE:configuracion por donde pasa la cantidad de pasos
-                            Config_algoritmo config;
-                            const auto ruta = config.ayuda(environment_.grid(),
-                                   environment_.getAgentPosition(),
-                                   environment_.getEnergy(),
-                                   environment_.maxTurns());
-                            routeHelpLines_ = Config_algoritmo::lineasAyuda(ruta);
+                            routeHelpLines_ = energyHelpLines();
                             showRouteHelp_ = true;
                             showHelp_ = false;
-                            message_ = "Ayuda de energía: P o Esc para volver. No transcurre ningún turno.";
+                            message_ = "Ayuda de energía: H, P o Esc para volver. No transcurre ningún turno.";
                             return KeyResult::handled;
                           },
                           [this](Action action)
@@ -370,18 +399,17 @@ ftxui::Element GameSession::render() const
     ftxui::Element view;
     if (showRouteHelp_)
     {
-        ftxui::Elements filas;
-        filas.push_back(ftxui::text(" AYUDA DE ENERGÍA (Dijkstra) ") | ftxui::bold | ftxui::center);
-        filas.push_back(ftxui::separator());
-        for (const std::string &linea : routeHelpLines_)
-            filas.push_back(ftxui::text(linea));
-        filas.push_back(ftxui::separator());
-        filas.push_back(ftxui::text("P, H o Esc para volver a jugar") | ftxui::dim);
-        view = ftxui::vbox(std::move(filas)) | ftxui::border;
+        // P abre solo la tabla; H la cierra.
+        view = energyHelpElement();
+    }
+    else if (showHelp_)
+    {
+        // H abre la ayuda completa: tabla dinámica de energía arriba y guía debajo.
+        view = ftxui::vbox({energyHelpElement(), ui_.help()});
     }
     else
     {
-        view = showHelp_ ? ui_.help() : ui_.render(environment_, recentEvents_, isAutomatic());
+        view = ui_.render(environment_, recentEvents_, isAutomatic());
     }
     return ftxui::vbox({view, ftxui::text(message_)});
 }

@@ -47,9 +47,6 @@ public:
 
 private:
     RenderMode mode_;
-    bool showHelp_{false};
-    bool showRouteHelp_{false};                 
-    std::vector<std::string> routeHelpLines_;
 };
 
 // Resultado de la partida (enunciado 4): si se completó, turnos, energía, recursos y puntaje
@@ -95,6 +92,12 @@ private:
     std::string message_;
     std::string finalResult_;                    // resumen de la partida terminada: sigue visible (5.8)
     bool showHelp_{false};
+    bool showRouteHelp_{false};                  // tabla de energía abierta con P
+    std::vector<std::string> routeHelpLines_;
+
+    // Tabla dinámica de energía (Dijkstra) calculada con el estado actual de la partida.
+    std::vector<std::string> energyHelpLines() const;
+    ftxui::Element energyHelpElement() const;
 
     void play(Action action);
     void decideWith(IController &controller);

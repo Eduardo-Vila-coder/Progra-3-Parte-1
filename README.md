@@ -106,10 +106,11 @@ deplegable a la izquierda inmediata del símbolo del martillo). En el menú desp
 | `guard_test` | **proyecto 2:** vigilante: avanza solo en turnos pares, recalcula hacia el jugador, capturas, prioridad de la captura sobre el escape, no consume baterías, espera sin camino, `reset` y validaciones |
 | `map_generation_test` | **proyecto 2:** `DisjointSet`, `MapGraph`, Kruskal (árbol y aperturas adicionales, desempate, semilla) |
 | `map_writer_test` | **proyecto 2:** guardado del mapa generado como `.txt`, metadatos y recarga con `loadScenario` |
+| `validator_test` | **proyecto 2:** validación del lote: rechazo por energía insuficiente y por interruptor encerrado |
 | `dijkstra_test` | **proyecto 2:** `Disjtrak` y `Config_algoritmo`: costo mínimo, reconstrucción del camino, muros, energía y validación de escenarios |
 | `map_batch_runner_test` | **proyecto 2:** concurrencia: determinismo 1 vs 4 trabajadores, errores por mapa y orden de fases |
 | `ui_test` | traducción de teclas, `GameSession` (tecla desconocida sin modificar el entorno, modo humano y automático, resultado final visible), emoji/ASCII de cada celda, render de 20 × 30, pie con el último evento relevante |
-| `help_test` | **proyecto 2:** tecla `P` (Dijkstra) y ayuda `H`, sin consumir turno, energía ni posición |
+| `help_test` | **proyecto 2:** ayuda `H` con tabla dinámica de energía y guía de controles; `P` abre la tabla; ninguna consume turno, energía ni posición |
 | `full_game_test` | **proyecto 2:** partida completa reproducible: misma secuencia y estado final tras `reset(seed)` |
 
 Las pruebas del motor no leen `std::cin` ni escriben en `std::cout`; solo `ui_test` y `help_test` se enlazan con FTXUI.
@@ -227,6 +228,10 @@ La pantalla muestra la barra de estado (turno, energía, puntaje, recursos y, en
 de A y B y si el vigilante avanza en el próximo turno), la regla de coordenadas,
 las 20 filas del tablero y un pie con el último evento relevante y la ayuda breve (cabe en 80 columnas). Cada celda y cada coordenada
 ocupa exactamente 2 columnas, así que cada fila mide 62 columnas.
+
+`H` abre la ayuda completa: primero la tabla dinámica de energía (gasto a A, a B y a la
+salida, energía disponible y estado) y debajo la guía de controles; se cierra con `H`, `P`
+o `Esc`. `P` abre directamente esa misma tabla. Ninguna de estas teclas consume turno.
 
 ## Perfiles de dificultad
 
