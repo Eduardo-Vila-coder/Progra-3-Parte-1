@@ -14,6 +14,7 @@
 #include "circuit_escape/map_generation/map_layout.hpp"
 #include "circuit_escape/map_generation/map_writer.hpp"
 #include "circuit_escape/scenario.hpp"
+#include "executable_path.hpp"
 
 namespace {
 
@@ -23,7 +24,7 @@ struct Options
     std::size_t mapCount{10};
     std::size_t workers{4};
     std::size_t extraOpenings{2};
-    std::filesystem::path output{mapsDirectory()};
+    std::filesystem::path output{mapsDirectory()}; // la carpeta de mapas que usa el juego
     bool help{false};
 };
 
@@ -80,7 +81,8 @@ void printUsage()
         << "  --maps N       cantidad de mapas a preparar, hasta 10 (por defecto 10)\n"
         << "  --workers N    trabajadores concurrentes (por defecto 4)\n"
         << "  --extra N      aperturas adicionales por mapa (por defecto 2)\n"
-        << "  --output DIR   carpeta donde se escriben los .txt (por defecto assets/maps)\n"
+        << "  --output DIR   carpeta donde se escriben los .txt (por defecto la carpeta assets/maps\n"
+        << "                 que usa el juego: la de la instalacion o la del proyecto)\n"
         << "  --help         muestra esta ayuda\n";
 }
 
@@ -88,6 +90,13 @@ void printUsage()
 
 int main(int argc, char* argv[])
 {
+    // Igual que escape_circuit: el programa instalado usa la carpeta assets/maps de la
+    // instalación, así los niveles que genera son los que carga el juego (proyecto 2, 8.1).
+    // Sin instalar (CLion) es la carpeta assets/maps del proyecto.
+    if (const auto installedMaps = findMapsNextTo(executablePath(argv[0])); installedMaps.has_value()) {
+        setMapsDirectory(installedMaps->string());
+    }
+
     Options options;
     try {
         options = parseOptions(argc, argv);
@@ -155,7 +164,8 @@ int main(int argc, char* argv[])
                       << ", costo " << chosen[index]->cost << ")\n";
         }
     } catch (const std::exception& error) {
-        std::cerr << "map_generator: " << error.what() << '\n';
+        std::cerr << "map_generator: " << error.what() << '\n'
+                  << "Sugerencia: indique otra carpeta con --output (por ejemplo, en Documentos).\n";
         return 1;
     }
 
