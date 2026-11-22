@@ -30,8 +30,8 @@ private:
         std::size_t filas_, columnas_, turnos_;
         CasillaInf peso(const Cell &casilla_, std::size_t x, std::size_t y) const
         {
-            bool facil = (turnos == 240);
-            bool dificil = (turnos == 140);
+            bool facil = (turnos_ == 240);
+            bool dificil = (turnos_ == 140);
             int recarga = facil ? 5 : (dificil ? 2 : 3);
             int elevado = dificil ? 3 : 2;
             int trampa = facil ? 2 : (dificil ? 4 : 3);
@@ -48,12 +48,14 @@ private:
                                          [&](const Trap &)
                                          { return CasillaInf{trampa, true, 0, x, y}; },
                                          [&](const Exit &)
+                                         { return CasillaInf{1, true, 0, x, y}; },
+                                         [&](const Switch &)
                                          { return CasillaInf{1, true, 0, x, y}; }},
                               casilla_);
         }
 
     public:
-        Constructor_nodos(It inicio, std::size_t filas, std::size_t columnas, std::size_t turnos)
+        Constructor_nodos(T1 inicio, std::size_t filas, std::size_t columnas, std::size_t turnos)
             : inicio_(inicio), filas_(filas), columnas_(columnas), turnos_(turnos) {}
 
         std::optional<CasillaInf> construir(std::size_t x, std::size_t y) const
@@ -106,7 +108,7 @@ public:
     std::string validacion_mapas(const std::string& direccion){
         try
         {
-            const auto escenario = loadScenario<Rows, Columns>(ruta);
+            const auto escenario = loadScenario<Rows, Columns>(direccion);
             const auto &grid = escenario.grid;
 
             Position salida{};
