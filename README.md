@@ -101,6 +101,7 @@ ctest --test-dir build -C Debug --output-on-failure   # Windows con Visual Studi
 | `bfs_test` | **proyecto 2:** BFS propio: menor cantidad de movimientos, desempate fijo, muros, destino inalcanzable u origen igual al destino |
 | `guard_test` | **proyecto 2:** vigilante: avanza solo en turnos pares, recalcula hacia el jugador, capturas, prioridad de la captura sobre el escape, no consume baterías, espera sin camino, `reset` y validaciones |
 | `map_generation_test` | **proyecto 2:** `DisjointSet`, `MapGraph`, Kruskal (árbol y aperturas adicionales, desempate, semilla) |
+| `map_writer_test` | **proyecto 2:** guardado del mapa generado como `.txt`, metadatos y recarga con `loadScenario` |
 | `dijkstra_test` | **proyecto 2:** `Disjtrak` y `Config_algoritmo`: costo mínimo, reconstrucción del camino, muros, energía y validación de escenarios |
 | `map_batch_runner_test` | **proyecto 2:** concurrencia: determinismo 1 vs 4 trabajadores, errores por mapa y orden de fases |
 | `ui_test` | traducción de teclas, `GameSession` (tecla desconocida sin modificar el entorno, modo humano y automático, resultado final visible), emoji/ASCII de cada celda, render de 20 × 30, pie con el último evento relevante |
@@ -163,7 +164,16 @@ comando muestra un mensaje y no consume turno.
 ```
 (con Visual Studio: `.\build\Debug\escape_circuit.exe`; con CLion: `.\cmake-build-debug\escape_circuit.exe`)
 
-El generador de mapas `map_generator` se compila automáticamente en cuanto existe `app/map_generator_main.cpp`.
+El generador de mapas `map_generator` ejecuta el `MapBatchRunner` (Kruskal → Dijkstra →
+clasificación) y escribe `assets/maps/mapa_facil.txt`, `mapa_medio.txt` y `mapa_dificil.txt`:
+
+```powershell
+cmake --build build --target map_generator --config Debug
+.\build\map_generator.exe --seed 42 --maps 10 --workers 4 --extra 2
+```
+
+Opciones: `--seed`, `--maps` (hasta 10), `--workers`, `--extra` (aperturas adicionales),
+`--output` y `--help`.
 
 Salida del modo `--headless`:
 ```text
@@ -236,10 +246,10 @@ en `standard`; en el escenario 1 se queda sin energía (el enunciado no exige qu
 
 ## Instalación (proyecto 2)
 
-El instalador de Windows (NSIS, generado con CPack) incluye `escape_circuit`, `map_generator`
-(cuando existe) y los escenarios de `assets/maps/`. Los programas se enlazan de forma estática, así
-que la PC de destino no necesita compilar ni instalar nada más. Detalles en
-[`installer/README.md`](installer/README.md).
+El instalador de Windows (NSIS, generado con CPack) incluye `escape_circuit`, `map_generator` y
+los escenarios de `assets/maps/`, incluidos los tres mapas generados. Los programas se enlazan
+de forma estática en Release, así que la PC de destino no necesita compilar ni instalar nada más.
+Detalles en [`installer/README.md`](installer/README.md).
 
 **Generar el instalador** (requiere CMake, el compilador de CLion y NSIS 3 en el `PATH`):
 ```powershell

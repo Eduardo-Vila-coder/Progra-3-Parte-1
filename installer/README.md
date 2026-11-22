@@ -5,12 +5,13 @@ El instalador distribuye **los dos ejecutables** del proyecto y los escenarios:
 | Se instala en | Contenido |
 |---|---|
 | `bin\escape_circuit.exe` | El juego |
-| `bin\map_generator.exe` | El generador de mapas (se incluye en cuanto exista `app/map_generator_main.cpp`) |
-| `assets\maps\` | Escenarios `.txt` que carga el juego |
+| `bin\map_generator.exe` | El generador de mapas (`MapBatchRunner`: Kruskal + Dijkstra + clasificación) |
+| `assets\maps\` | Escenarios `.txt` que carga el juego, incluidos `mapa_facil/medio/dificil.txt` |
 | `README.md` | Instrucciones del proyecto |
 
-Los programas se enlazan de forma **estática** (MinGW) y FTXUI es una biblioteca estática,
-así que la PC de destino **no necesita compilar ni instalar nada más**.
+En Release los programas se enlazan de forma **estática** (MinGW) y FTXUI es una biblioteca
+estática, así que la PC de destino **no necesita compilar ni instalar nada más**. En Debug
+se usa enlazado dinámico para poder compilar y probar con el MinGW de CLion.
 El juego busca los mapas en `bin\..\assets\maps`, por eso funciona desde cualquier carpeta.
 
 ## 1. Generar el instalador (en la PC de desarrollo)

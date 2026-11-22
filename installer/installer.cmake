@@ -17,7 +17,12 @@ endif()
 # FTXUI ya se compila como biblioteca estática.
 if(MINGW)
     foreach(program IN LISTS CIRCUIT_ESCAPE_PROGRAMS)
-        target_link_options(${program} PRIVATE -static -static-libgcc -static-libstdc++)
+        # El enlazado totalmente estático es necesario para el instalador (Release),
+        # pero este MinGW no lo resuelve en Debug. Las pruebas y el desarrollo usan
+        # enlazado dinámico con el directorio del compilador en PATH.
+        foreach(option IN ITEMS -static -static-libgcc -static-libstdc++)
+            target_link_options(${program} PRIVATE "$<$<CONFIG:Release>:${option}>")
+        endforeach()
     endforeach()
 endif()
 

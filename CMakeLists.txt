@@ -39,6 +39,8 @@ add_library(circuit_escape_core
         include/circuit_escape/game_rules.hpp
         include/circuit_escape/graph/graph.hpp
         include/circuit_escape/map_generation/map_builder.hpp
+        include/circuit_escape/map_generation/map_layout.hpp
+        include/circuit_escape/map_generation/map_writer.hpp
         include/circuit_escape/map_generation/map_selector.hpp
         include/circuit_escape/pathfinding/search_result.hpp
         include/circuit_escape/pathfinding/bfs.hpp
@@ -67,12 +69,10 @@ target_link_libraries(circuit_escape_ui PUBLIC circuit_escape_core ftxui::screen
 add_executable(escape_circuit app/main.cpp)
 target_link_libraries(escape_circuit PRIVATE circuit_escape_ui)
 
-# Generador de mapas (proyecto 2, 5.3): se agrega automáticamente cuando exista app/map_generator_main.cpp.
+# Generador de mapas (proyecto 2, 5.3): ejecuta MapBatchRunner y escribe los tres .txt.
 # Solo usa el core (Kruskal, Dijkstra, guardado de mapas), no la consola con FTXUI.
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/app/map_generator_main.cpp")
-    add_executable(map_generator app/map_generator_main.cpp)
-    target_link_libraries(map_generator PRIVATE circuit_escape_core)
-endif()
+add_executable(map_generator app/map_generator_main.cpp)
+target_link_libraries(map_generator PRIVATE circuit_escape_core)
 
 # Pruebas Unitarias explícitas (tests/)
 enable_testing()
@@ -126,6 +126,10 @@ add_executable(map_generation_test tests/map_generation/map_generation_test.cpp)
 target_link_libraries(map_generation_test PRIVATE circuit_escape_core)
 add_test(NAME MapGenerationTest COMMAND map_generation_test)
 
+add_executable(map_writer_test tests/map_generation/map_writer_test.cpp)
+target_link_libraries(map_writer_test PRIVATE circuit_escape_core)
+add_test(NAME MapWriterTest COMMAND map_writer_test)
+
 add_executable(map_batch_runner_test tests/concurrency/batch_test.cpp)
 target_link_libraries(map_batch_runner_test PRIVATE circuit_escape_core)
 add_test(NAME MapBatchRunnerTest COMMAND map_batch_runner_test)
@@ -153,8 +157,8 @@ add_custom_target(check
                 ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>
         DEPENDS grid_test environment_test interactions_test controllers_test scenarios_test
                 events_test simulation_test ui_test switches_test bfs_test guard_test
-                map_generation_test map_batch_runner_test dijkstra_test help_test
-                full_game_test
+                map_generation_test map_writer_test map_batch_runner_test dijkstra_test
+                help_test full_game_test
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Compila y ejecuta todas las pruebas con CTest"
         USES_TERMINAL)
