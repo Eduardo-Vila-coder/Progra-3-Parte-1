@@ -130,6 +130,10 @@ add_executable(map_writer_test tests/map_generation/map_writer_test.cpp)
 target_link_libraries(map_writer_test PRIVATE circuit_escape_core)
 add_test(NAME MapWriterTest COMMAND map_writer_test)
 
+add_executable(validator_test tests/map_generation/validator_test.cpp)
+target_link_libraries(validator_test PRIVATE circuit_escape_core)
+add_test(NAME MapValidatorTest COMMAND validator_test)
+
 add_executable(map_batch_runner_test tests/concurrency/batch_test.cpp)
 target_link_libraries(map_batch_runner_test PRIVATE circuit_escape_core)
 add_test(NAME MapBatchRunnerTest COMMAND map_batch_runner_test)
@@ -157,8 +161,8 @@ add_custom_target(check
                 ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>
         DEPENDS grid_test environment_test interactions_test controllers_test scenarios_test
                 events_test simulation_test ui_test switches_test bfs_test guard_test
-                map_generation_test map_writer_test map_batch_runner_test dijkstra_test
-                help_test full_game_test
+                map_generation_test map_writer_test validator_test map_batch_runner_test
+                dijkstra_test help_test full_game_test
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Compila y ejecuta todas las pruebas con CTest"
         USES_TERMINAL)
