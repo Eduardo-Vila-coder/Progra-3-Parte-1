@@ -52,6 +52,31 @@ Orden obligatorio del enunciado (5.5):
    (una batería todavía puede recargar al agente).
 7. Se comprueban las condiciones de término con la precedencia `goalReached` > `noEnergy` > `turnLimit`.
 
+**Orden del turno en el proyecto 2** (enunciado 3.2). Los pasos 1 a 6 son los mismos: actúa el jugador.
+Los pasos siguientes reemplazan al 7 cuando el mapa tiene vigilante o interruptores:
+
+7. **Captura inicial:** si el jugador ocupa la casilla del vigilante, la partida termina con
+   `EndReason::captured` y el vigilante no llega a actuar.
+8. **Actúa el vigilante** (`moveGuard`): solo en turnos pares. Su controlador *propone* una acción con
+   BFS y el entorno la valida; si no es legal (muro, borde) o no hay camino, espera. No gasta energía del
+   jugador ni consume baterías.
+9. **Captura tras mover:** si el vigilante quedó sobre el jugador, hay captura.
+10. **Resultado:** con captura se genera `PlayerCapturedEvent` y la partida termina. Sin captura, se activa
+    el interruptor de la casilla (`activateSwitch`; con la energía agotada ya no se activa) y se comprueban
+    las condiciones de término.
+
+Precedencia completa: `captured` > `goalReached` > `noEnergy` > `turnLimit`. La salida solo da la
+victoria con A y B activados y energía positiva; pisarla antes no termina la partida. Por eso la captura
+gana al escape aunque ambos ocurran en la misma casilla o en el último turno permitido (que cuenta si no
+hubo captura). El caso "captura gana al escape" y las capturas de los pasos 7 y 9 están en `guard_test`; la
+persistencia de los interruptores y la salida anticipada, en `switches_test`. `reset` devuelve también al
+vigilante a su casilla inicial y desactiva los interruptores, porque restaura el tablero desde la copia.
+
+**Observación de solo lectura.** `Observation` incluye el estado de A y B, la posición del vigilante y una
+**copia** del mapa (`rows`, `columns`, `map` y `cellAt(position)`). Es una copia y no una referencia para
+que los controladores y la ayuda no puedan modificar la partida y la observación siga siendo válida aunque
+el entorno ya no exista.
+
 Toda modificación de energía pasa por `changeEnergy`, que usa `std::clamp(…, 0, maxEnergy)` y solo
 genera `EnergyChangedEvent` si el valor cambió. Los eventos se agregan en el orden en que ocurren.
 

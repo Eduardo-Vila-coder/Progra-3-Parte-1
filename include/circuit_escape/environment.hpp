@@ -358,6 +358,10 @@ public:
         observation.hasGuard = hasGuard();
         observation.guard = guard_;
         observation.guardMovesNextTurn = hasGuard() && !isFinished() && (turn_ + 1) % 2 == 0;
+        // Mapa de solo lectura: se entrega una copia del tablero actual (enunciado, sección 4)
+        observation.rows = Rows;
+        observation.columns = Columns;
+        observation.map.assign(initialGrid.begin(), initialGrid.end());
         return observation;
     }
 

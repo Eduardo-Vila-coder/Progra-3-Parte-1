@@ -5,6 +5,7 @@
 #include "../include/circuit_escape/controllers.hpp"
 
 #include <stdexcept>
+#include <variant>
 #include <vector>
 
 std::size_t manhattanDistance(Position a, Position b) {
@@ -29,6 +30,32 @@ Action RandomPolicy::selectAction(const Observation&, std::span<const Action> le
 }
 
 // ===== HeuristicPolicy =====
+
+namespace {
+// [Se usó IA para esta parte]
+// Proyecto 2: si quedan interruptores sin activar, la heurística va primero al más cercano (distancia
+// Manhattan, reutilizando bestBy). Con A y B activados, o en mapas sin interruptores, va a la salida.
+// Lee el mapa de solo lectura de la observación.
+Position targetFor(const Observation& observation) {
+    std::vector<Position> pending;
+    for (std::size_t row = 0; row < observation.rows; ++row) {
+        for (std::size_t column = 0; column < observation.columns; ++column) {
+            const Position position{row, column};
+            const Switch* candidate = std::get_if<Switch>(&observation.cellAt(position));
+            if (candidate != nullptr && !candidate->active) {
+                pending.push_back(position);
+            }
+        }
+    }
+    if (pending.empty()) {
+        return observation.goal;
+    }
+    const auto nearest = bestBy(pending.begin(), pending.end(), [&observation](Position position) {
+        return manhattanDistance(observation.agent, position);
+    });
+    return *nearest;
+}
+}  // namespace
 
 Action HeuristicPolicy::selectAction(const Observation& observation, std::span<const Action> legalActions) {
     if (legalActions.empty()) {
@@ -66,9 +93,11 @@ Action HeuristicPolicy::selectAction(const Observation& observation, std::span<c
         forward = moves;
     }
 
-    // 3. Elegimos el movimiento que deja al agente más cerca de la salida
+    // 3. Elegimos el movimiento que deja al agente más cerca de su objetivo
+    //    (un interruptor pendiente o, si no hay, la salida)
+    const Position goal = targetFor(observation);
     auto best = bestBy(forward.begin(), forward.end(), [&](Action action) {
-        return manhattanDistance(targetOf(action), observation.goal);
+        return manhattanDistance(targetOf(action), goal);
     });
 
     previous_ = observation.agent; // recordamos de dónde salimos

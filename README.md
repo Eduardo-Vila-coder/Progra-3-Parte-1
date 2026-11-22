@@ -93,10 +93,10 @@ ctest --test-dir build -C Debug --output-on-failure   # Windows con Visual Studi
 | `environment_test` | acciones disponibles, movimientos, perfiles, término y precedencia, precondiciones del constructor, `CellTraits` (transitable y consumible) |
 | `interactions_test` | costos, recurso, batería, trampa y límites de energía |
 | `events_test` | los tipos de evento, `std::visit`, fold expressions, `countEvents` con varios contenedores |
-| `controllers_test` | `bestBy`, políticas aleatoria y heurística, concept `NavigationPolicy`, `HumanController` y colección polimórfica de `IController` |
+| `controllers_test` | `bestBy`, políticas aleatoria y heurística (que en el proyecto 2 va primero a los interruptores pendientes), concept `NavigationPolicy`, `HumanController` y colección polimórfica de `IController` |
 | `scenarios_test` | carga de mapas, los dos escenarios de 20 × 30 y sus rutas comprobadas |
 | `simulation_test` | `reset(seed)` y simulación reproducible con semilla fija |
-| `switches_test` | **proyecto 2:** activación de A y B en ambos órdenes, salida anticipada sin victoria, persistencia, `reset`, energía agotada, último turno, validación del tablero y símbolos `a`/`b` |
+| `switches_test` | **proyecto 2:** activación de A y B en ambos órdenes, salida anticipada sin victoria, persistencia, `reset`, energía agotada, último turno, validación del tablero, símbolos `a`/`b` y mapa de solo lectura de la observación |
 | `bfs_test` | **proyecto 2:** BFS propio: menor cantidad de movimientos, desempate fijo, muros, destino inalcanzable u origen igual al destino |
 | `guard_test` | **proyecto 2:** vigilante: avanza solo en turnos pares, recalcula hacia el jugador, capturas, prioridad de la captura sobre el escape, no consume baterías, espera sin camino, `reset` y validaciones |
 | `map_generation_test` | **proyecto 2:** `DisjointSet`, `MapGraph`, Kruskal (árbol y aperturas adicionales, desempate, semilla) |
@@ -260,7 +260,7 @@ El programa instalado busca los mapas en `bin\..\assets\maps`, así que funciona
 |---|---|---|---|
 | `Cell` (`std::variant`) y `CellTraits` | nueva celda `Switch` (interruptor A o B) | interruptores del mapa | `switches_test` |
 | `NavigationEnvironment` (`step`, `reset`, `state`, término) | activación de interruptores, salida condicionada, vigilante, captura y nuevo orden del turno | único que modifica la partida | `switches_test`, `guard_test`, `environment_test` |
-| `Observation` y eventos | estado de A y B, posición del vigilante; eventos `SwitchActivatedEvent`, `GuardMovedEvent`, `PlayerCapturedEvent` | interfaz y controladores | `switches_test`, `guard_test`, `events_test` |
+| `Observation` y eventos | estado de A y B, posición del vigilante y mapa de solo lectura (`rows`, `columns`, `map`, `cellAt`); eventos `SwitchActivatedEvent`, `GuardMovedEvent`, `PlayerCapturedEvent` | interfaz y controladores | `switches_test`, `guard_test`, `events_test` |
 | Concept `NavigationPolicy` + `PolicyController` + `IController` | mismo patrón para el vigilante: `GuardPolicy` + `GuardPolicyController` + `IGuardController` | `BfsGuardPolicy` persigue al jugador | `guard_test` |
 | `Grid` y `Position` | conversión a grafo (`MapGraph`) con índices `fila * columnas + columna` | Kruskal, BFS y Dijkstra | `map_generation_test`, `bfs_test` |
 | Cargador de escenarios | símbolos `a`, `b` y `V`; búsqueda de los mapas junto al programa instalado | juego instalado | `switches_test`, `guard_test`, `scenarios_test` |

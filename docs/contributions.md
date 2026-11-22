@@ -48,6 +48,11 @@ historial del repositorio (`git log --author="<nombre>"`) y en los pull requests
 - Escenarios de 20 × 30 (`assets/maps/`), cargador `scenario.hpp` y `scenarios_test.cpp`.
 - `IController` y `PolicyController<Policy>`, y la aplicación `app/main.cpp` (opciones de línea de
   comandos, modo automático y `--headless`).
+- Proyecto 2: revisión del orden del turno (3.2) y de la precedencia captura > escape contra el
+  enunciado; mapa de solo lectura en `Observation` (`rows`, `columns`, `map`, `cellAt`) con su prueba en
+  `switches_test`; la política heurística ahora va primero al interruptor pendiente más cercano (usa
+  `bestBy` y el mapa de la observación) con su prueba en `controllers_test`; y actualización de
+  `docs/design.md` con el orden del turno del proyecto 2.
 
 ### Mathius Edgar Quispe Sicha (hfuv / MQS144) — Tablero, dominio e interfaz
 - `Grid<CellType, Rows, Columns>` con `std::array`, acceso validado e iteradores.
@@ -80,5 +85,7 @@ Los cambios se integraron en `main` mediante pull requests desde ramas por tarea
 
 Algunas partes se desarrollaron con ayuda de asistentes de IA, como se indica en los comentarios del
 código (`[Se usó IA …]`). Las pruebas `grid_test` y `ui_test`, las precondiciones del constructor,
-`CellTraits`, `HumanController` y la documentación se hicieron con asistencia de Claude. Todo el código fue revisado, compilado y probado
+`CellTraits`, `HumanController` y la documentación se hicieron con asistencia de Claude. En el
+proyecto 2, el mapa de solo lectura de `Observation`, su prueba y la actualización de `design.md` se
+hicieron con asistencia de Claude (marcado con `[Se usó IA …]` en el código). Todo el código fue revisado, compilado y probado
 por el grupo.

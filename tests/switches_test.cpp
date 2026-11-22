@@ -141,6 +141,24 @@ int main() {
         assert(describe(event).find("Interruptor A activado") != std::string::npos);
     }
 
+    // 10. La observación incluye el mapa de solo lectura (enunciado 4): es una copia del tablero
+    {
+        Env e{switchesGrid(), start, 20, 100};
+        Observation before = e.state();
+        assert(before.rows == 3 && before.columns == 5 && before.map.size() == 15);
+        assert(std::holds_alternative<Exit>(before.cellAt({1, 2})));
+        assert(!std::get<Switch>(before.cellAt({1, 0})).active);
+
+        StepResult r = e.step(Action::left);                       // entra a A: el mapa del siguiente estado lo refleja
+        assert(std::get<Switch>(r.observation.cellAt({1, 0})).active);
+        assert(!std::get<Switch>(before.cellAt({1, 0})).active);   // la copia anterior no cambió
+
+        bool threw = false;
+        try { (void)before.cellAt({9, 9}); }
+        catch (const std::out_of_range&) { threw = true; }
+        assert(threw);
+    }
+
     std::cout << "switches_test: todas las pruebas pasaron\n";
     return 0;
 }
