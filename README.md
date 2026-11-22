@@ -297,7 +297,13 @@ los escenarios de `assets/maps/`, incluidos los tres mapas generados. Los progra
 de forma estática en Release, así que la PC de destino no necesita compilar ni instalar nada más.
 Detalles en [`installer/README.md`](installer/README.md).
 
-**Generar el instalador** (requiere CMake, el compilador de CLion y NSIS 3 en el `PATH`):
+Es **un solo instalador** con los dos ejecutables, como pide el enunciado (sección 8.1).
+Sistema operativo de la demostración: **Windows 10/11**.
+
+**Generar el instalador.** Requisitos: **CLion** (o CMake + un compilador C++20) y **NSIS 3**
+(<https://nsis.sourceforge.io>, instalado con las opciones por defecto). No hace falta configurar el
+`PATH`: si `cmake` o `makensis` no están en el `PATH`, el script usa las herramientas de CLion (CMake,
+Ninja y MinGW) y NSIS desde sus carpetas de instalación por defecto. Desde la raíz del repositorio:
 ```powershell
 .\installer\build_installer.bat
 ```
@@ -308,8 +314,10 @@ Deja `dist\CircuitoDeEscape-2.0.0-Windows.exe` (instalador) y `dist\CircuitoDeEs
 
 **Ejecutar:** menú Inicio → *Circuito de Escape*, o desde una terminal:
 ```powershell
-& "C:\Program Files\Circuito de Escape\bin\escape_circuit.exe" --controller heuristic --scenario 2 --headless
+& "C:\Program Files\Circuito de Escape\bin\escape_circuit.exe" --level facil
+& "C:\Program Files\Circuito de Escape\bin\map_generator.exe" --seed 42 --workers 4 --output "$env:USERPROFILE\Documents\mapas"
 ```
+El generador necesita una carpeta de salida con permiso de escritura (no `C:\Program Files`).
 El programa instalado busca los mapas en `bin\..\assets\maps`, así que funciona desde cualquier carpeta.
 
 **Desinstalar:** Configuración → Aplicaciones → *Circuito de Escape* → Desinstalar, o el acceso
