@@ -138,6 +138,10 @@ add_executable(map_batch_runner_test tests/concurrency/batch_test.cpp)
 target_link_libraries(map_batch_runner_test PRIVATE circuit_escape_core)
 add_test(NAME MapBatchRunnerTest COMMAND map_batch_runner_test)
 
+add_executable(guard_placement_test tests/map_generation/guard_placement_test.cpp)
+target_link_libraries(guard_placement_test PRIVATE circuit_escape_core)
+add_test(NAME GuardPlacementTest COMMAND guard_placement_test)
+
 add_executable(dijkstra_test tests/pathfinding/dijkstra_test.cpp)
 target_link_libraries(dijkstra_test PRIVATE circuit_escape_core)
 add_test(NAME DijkstraTest COMMAND dijkstra_test)
@@ -162,7 +166,7 @@ add_custom_target(check
         DEPENDS grid_test environment_test interactions_test controllers_test scenarios_test
                 events_test simulation_test ui_test switches_test bfs_test guard_test
                 map_generation_test map_writer_test validator_test map_batch_runner_test
-                dijkstra_test help_test full_game_test
+                dijkstra_test help_test full_game_test guard_placement_test
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Compila y ejecuta todas las pruebas con CTest"
         USES_TERMINAL)

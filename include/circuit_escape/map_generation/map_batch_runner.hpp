@@ -69,8 +69,9 @@ class MazeMapValidator : public IMapValidator<Rows, Columns>
 {
     int initialEnergy_;
 public:
-    // Energía inicial del perfil con el que se va a jugar (Standard = 60)
-    explicit MazeMapValidator(int initialEnergy = GameRules<>{}.initialMaxEnergy)
+    // Energía inicial del perfil más exigente (Hard = 40): un mapa válido se puede ganar en los
+    // tres perfiles, porque easy y standard tienen más energía y los mismos costos en salas y muros
+    explicit MazeMapValidator(int initialEnergy = GameRules<Difficulty::Hard>{}.initialMaxEnergy)
         : initialEnergy_(initialEnergy) {}
 
     [[nodiscard]] ValidationResult validate(const BuiltMap<Rows, Columns>& map) override
@@ -105,7 +106,7 @@ public:
         };
 
         Nodes nodes{map.grid};
-        const map_layout::MapEntities e = map_layout::chooseEntities(map.grid);
+        const map_layout::MapEntities e = map_layout::chooseEntities(map.grid, map.seed);
 
         // Costo mínimo de un tramo con Dijkstra; -1 si no hay camino
         const auto leg = [&](Position from, Position to) {
@@ -134,6 +135,11 @@ public:
             return ValidationResult{map.id, best, false,
                 "energia insuficiente: costo " + std::to_string(best) +
                 ", energia " + std::to_string(initialEnergy_)};
+        }
+        // Con el vigilante: chooseEntities lo ubica donde existe al menos una partida
+        // ganadora; si no encontró ninguna sala así, el mapa no tiene victoria.
+        if (!e.winnable) {
+            return ValidationResult{map.id, best, false, "vigilante: no existe partida ganadora"};
         }
         return ValidationResult{map.id, best, true, {}};
     }

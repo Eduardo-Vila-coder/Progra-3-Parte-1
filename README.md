@@ -109,6 +109,7 @@ deplegable a la izquierda inmediata del símbolo del martillo). En el menú desp
 | `validator_test` | **proyecto 2:** validación del lote: rechazo por energía insuficiente y por interruptor encerrado |
 | `dijkstra_test` | **proyecto 2:** `Disjtrak` y `Config_algoritmo`: costo mínimo, reconstrucción del camino, muros, energía y validación de escenarios |
 | `map_batch_runner_test` | **proyecto 2:** concurrencia: determinismo 1 vs 4 trabajadores, errores por mapa y orden de fases |
+| `guard_placement_test` | **proyecto 2:** ubicación de la salida y del vigilante: la comprobación de partida ganable coincide con el motor real (entorno + vigilante con BFS) y los tres niveles entregados se pueden ganar en `hard` (y por lo tanto en `standard` y `easy`) |
 | `ui_test` | traducción de teclas, `GameSession` (tecla desconocida sin modificar el entorno, modo humano y automático, resultado final visible), emoji/ASCII de cada celda, render de 20 × 30, pie con el último evento relevante |
 | `help_test` | **proyecto 2:** ayuda `H` con tabla dinámica de energía y guía de controles; `P` abre la tabla; ninguna consume turno, energía ni posición |
 | `full_game_test` | **proyecto 2:** partida completa reproducible: misma secuencia y estado final tras `reset(seed)` |
@@ -265,6 +266,26 @@ batería) y `V` marca el inicio del vigilante (su casilla es un espacio libre). 
 |---|---|---|
 | `scenario_01.txt` | Reproducción del ejemplo del enunciado (página 11) | `easy` y `standard`, por dos rutas distintas. **No** es posible en `hard`: la ruta más corta necesita 44 movimientos y solo hay 40 + 2 de energía |
 | `scenario_02.txt` | Diseño propio con un paso norte (batería) y un paso sur (terreno elevado) | `easy`, `standard` y `hard` |
+| `mapa_facil.txt` | Nivel fácil generado por `map_generator` (costo mínimo 24) | `easy`, `standard` y `hard`, con el vigilante |
+| `mapa_medio.txt` | Nivel medio generado (costo mínimo 30) | `easy`, `standard` y `hard`, con el vigilante |
+| `mapa_dificil.txt` | Nivel difícil generado (costo mínimo 38) | `easy`, `standard` y `hard`, con el vigilante |
+
+**Ubicación de los elementos en los mapas generados** (`map_layout::chooseEntities`):
+
+- El inicio y los interruptores A y B ocupan salas fijas.
+- La salida se ubica en una sala cuyo recorrido mínimo Inicio → A → B → Salida (o B → A) se puede pagar
+  con la energía del perfil `hard` (40). Entre esas salas se elige la más cercana a un costo objetivo
+  que depende de la semilla del mapa, para que el lote tenga costos distintos y `MapSelector` pueda
+  clasificar los niveles fácil, medio y difícil.
+- El vigilante se prueba en las salas de la más lejana a la más cercana al inicio y se elige la primera
+  desde la que **existe al menos una partida ganadora** en `hard` (`map_layout::winnableWithGuard`).
+  Como `easy` y `standard` tienen más energía y más turnos con los mismos costos, el nivel también se
+  puede ganar en esos perfiles.
+- El validador (`MazeMapValidator`) usa la energía de `hard`; si no existe ninguna combinación ganable,
+  rechaza el mapa.
+
+No se guarda ni se reproduce una secuencia ganadora (el profesor indicó que no es necesario): solo se
+comprueba que existe, para que ningún nivel quede imposible en ninguna dificultad.
 
 Las rutas están verificadas en `tests/scenarios_test.cpp`. La política heurística completa el escenario 2
 en `standard`; en el escenario 1 se queda sin energía (el enunciado no exige que encuentre el camino óptimo).

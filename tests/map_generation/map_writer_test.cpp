@@ -55,7 +55,10 @@ int main()
     BuiltMap<Rows, Columns> map = built;
     const map_layout::MapEntities entities = map_layout::placeEntities(map);
     assert((entities.start == Position{0, 0}));
-    assert((entities.goal == Position{4, 4}));
+    // La salida es una sala libre distinta del inicio y de los interruptores (proyecto 2)
+    assert(entities.goal != entities.start && entities.goal != entities.switchA &&
+           entities.goal != entities.switchB);
+    assert(entities.winnable);
     assert(entities.switchA != entities.switchB);
     assert(entities.guard != entities.start && entities.guard != entities.goal &&
            entities.guard != entities.switchA && entities.guard != entities.switchB);
