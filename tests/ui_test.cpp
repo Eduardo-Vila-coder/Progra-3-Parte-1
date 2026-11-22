@@ -29,7 +29,9 @@ NavigationEnvironment<20, 30> scenarioOne() {
 }
 
 ftxui::Screen draw(ftxui::Element element) {
-    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fit(element));
+    // `true` evita que FTXUI recorte el render a la altura de la terminal: las
+    // aserciones comproban el tablero completo (23 filas) aunque la consola sea más baja.
+    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fit(element, true));
     ftxui::Render(screen, element);
     return screen;
 }
