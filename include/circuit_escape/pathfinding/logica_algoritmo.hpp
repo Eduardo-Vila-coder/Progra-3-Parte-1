@@ -10,6 +10,9 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <queue>
+#include <array>
+#include <limits>
 // comentario: disculpen el error ya me dio miedo cambiar el nombre
 class Disjtrak 
 {
