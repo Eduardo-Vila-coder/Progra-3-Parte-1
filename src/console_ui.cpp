@@ -92,6 +92,10 @@ std::optional<UiCommand> ConsoleUI::translate(const ftxui::Event &event) const
     {
         return QuitCommand{};
     }
+    if (event == ftxui::Event::Character('p') || event == ftxui::Event::Character('P'))
+    {
+    return Calculo_ruta{};
+    }
     return std::nullopt;
 }
 
@@ -186,6 +190,7 @@ ftxui::Element ConsoleUI::help() const
     help_lines.push_back(text("  • E                   : Esperar un turno"));
     help_lines.push_back(text("  • Espacio / Enter     : Avanzar un turno (modo automático)"));
     help_lines.push_back(text("  • H                   : Mostrar / Ocultar esta ayuda"));
+    help_lines.push_back(text("  • P                   : Calculo Ruta"));
     help_lines.push_back(text("  • Q                   : Salir del juego"));
 
     help_lines.push_back(separator());
