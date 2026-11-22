@@ -42,6 +42,9 @@ add_library(circuit_escape_core
         include/circuit_escape/map_generation/map_selector.hpp
         include/circuit_escape/pathfinding/search_result.hpp
         include/circuit_escape/pathfinding/bfs.hpp
+        include/circuit_escape/pathfinding/logica_algoritmo.hpp
+        include/circuit_escape/pathfinding/config_algoritmo.hpp
+        include/circuit_escape/map_generation/map_batch_runner.hpp
         include/circuit_escape/controllers/guard_controller.hpp
         src/environment.cpp
         src/controllers.cpp
@@ -122,6 +125,39 @@ add_test(NAME GuardTest COMMAND guard_test)
 add_executable(map_generation_test tests/map_generation/map_generation_test.cpp)
 target_link_libraries(map_generation_test PRIVATE circuit_escape_core)
 add_test(NAME MapGenerationTest COMMAND map_generation_test)
+
+add_executable(map_batch_runner_test tests/concurrency/batch_test.cpp)
+target_link_libraries(map_batch_runner_test PRIVATE circuit_escape_core)
+add_test(NAME MapBatchRunnerTest COMMAND map_batch_runner_test)
+
+add_executable(dijkstra_test tests/pathfinding/dijkstra_test.cpp)
+target_link_libraries(dijkstra_test PRIVATE circuit_escape_core)
+add_test(NAME DijkstraTest COMMAND dijkstra_test)
+
+add_executable(help_test tests/help_test.cpp)
+target_link_libraries(help_test PRIVATE circuit_escape_ui)
+add_test(NAME HelpTest COMMAND help_test)
+
+add_executable(full_game_test tests/full_game_test.cpp)
+target_link_libraries(full_game_test PRIVATE circuit_escape_core)
+add_test(NAME FullGameTest COMMAND full_game_test)
+
+# Objetivo único para compilar y ejecutar TODAS las pruebas.
+# No depende de escape_circuit: verificar las pruebas no requiere enlazar el juego.
+# En Windows con MinGW los ejecutables necesitan el directorio del compilador en PATH
+# (libstdc++-6.dll, libgcc_s_seh-1.dll y libwinpthread-1.dll); si no, CTest devuelve 0xc0000135.
+get_filename_component(CIRCUIT_ESCAPE_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+add_custom_target(check
+        COMMAND ${CMAKE_COMMAND} -E env
+                "PATH=${CIRCUIT_ESCAPE_COMPILER_DIR};$ENV{PATH}"
+                ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>
+        DEPENDS grid_test environment_test interactions_test controllers_test scenarios_test
+                events_test simulation_test ui_test switches_test bfs_test guard_test
+                map_generation_test map_batch_runner_test dijkstra_test help_test
+                full_game_test
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Compila y ejecuta todas las pruebas con CTest"
+        USES_TERMINAL)
 
 # Instalador de Windows con CPack + NSIS (proyecto 2, 8.1). Ver installer/README.md
 include(installer/installer.cmake)

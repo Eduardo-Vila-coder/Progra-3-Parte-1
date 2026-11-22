@@ -83,6 +83,7 @@ Los mapas sin interruptores ni vigilante (los del proyecto 1) se juegan con las 
 ## Pruebas
 
 ```bash
+cmake --build build --target check --config Debug     # compila y ejecuta todas las pruebas
 ctest --test-dir build --output-on-failure            # Linux, macOS, MinGW
 ctest --test-dir build -C Debug --output-on-failure   # Windows con Visual Studio
 ```
@@ -100,9 +101,13 @@ ctest --test-dir build -C Debug --output-on-failure   # Windows con Visual Studi
 | `bfs_test` | **proyecto 2:** BFS propio: menor cantidad de movimientos, desempate fijo, muros, destino inalcanzable u origen igual al destino |
 | `guard_test` | **proyecto 2:** vigilante: avanza solo en turnos pares, recalcula hacia el jugador, capturas, prioridad de la captura sobre el escape, no consume baterías, espera sin camino, `reset` y validaciones |
 | `map_generation_test` | **proyecto 2:** `DisjointSet`, `MapGraph`, Kruskal (árbol y aperturas adicionales, desempate, semilla) |
+| `dijkstra_test` | **proyecto 2:** `Disjtrak` y `Config_algoritmo`: costo mínimo, reconstrucción del camino, muros, energía y validación de escenarios |
+| `map_batch_runner_test` | **proyecto 2:** concurrencia: determinismo 1 vs 4 trabajadores, errores por mapa y orden de fases |
 | `ui_test` | traducción de teclas, `GameSession` (tecla desconocida sin modificar el entorno, modo humano y automático, resultado final visible), emoji/ASCII de cada celda, render de 20 × 30, pie con el último evento relevante |
+| `help_test` | **proyecto 2:** tecla `P` (Dijkstra) y ayuda `H`, sin consumir turno, energía ni posición |
+| `full_game_test` | **proyecto 2:** partida completa reproducible: misma secuencia y estado final tras `reset(seed)` |
 
-Las pruebas del motor no leen `std::cin` ni escriben en `std::cout`; solo `ui_test` se enlaza con FTXUI.
+Las pruebas del motor no leen `std::cin` ni escriben en `std::cout`; solo `ui_test` y `help_test` se enlazan con FTXUI.
 
 **Prueba negativa de compilación (concept).** `tests/negative/bad_policy.cpp` **no debe compilar**, por
 eso no está en CMake. Muestra el diagnóstico cuando una política no cumple `NavigationPolicy`:
