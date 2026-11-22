@@ -43,37 +43,30 @@ struct MapEntities
     Position guard{};
 };
 
-// Elige salas distintas en orden fijo y las escribe en el tablero. El inicio y el
-// vigilante siguen siendo Empty en la celda; el escritor de texto los marca con '@' y 'V'.
-template <std::size_t Rows, std::size_t Columns>
-MapEntities placeEntities(BuiltMap<Rows, Columns>& map)
-{
-    const std::vector<Position> available = rooms(map.grid);
-    if (available.size() < 5) {
-        throw std::invalid_argument("El mapa no tiene salas suficientes para los elementos");
+    // Solo ELIGE las posiciones (no modifica el tablero). La usa el validador.
+    template <std::size_t Rows, std::size_t Columns>
+    [[nodiscard]] MapEntities chooseEntities(const Grid<Cell, Rows, Columns>& grid)
+    {
+        const std::vector<Position> available = rooms(grid);
+        if (available.size() < 5) {
+            throw std::invalid_argument("El mapa no tiene salas suficientes para los elementos");
+        }
+        // inicio, salida, A, B, vigilante (las mismas posiciones que antes)
+        return MapEntities{available.front(), available.back(), available[1], available[2], available[3]};
     }
 
-    MapEntities entities{
-        available.front(),
-        available.back(),
-        available[1],
-        available[2],
-        Position{},
-    };
+// Elige salas distintas en orden fijo y las escribe en el tablero. El inicio y el
+// vigilante siguen siendo Empty en la celda; el escritor de texto los marca con '@' y 'V'.
+    template <std::size_t Rows, std::size_t Columns>
+    MapEntities placeEntities(BuiltMap<Rows, Columns>& map)
+    {
+        const MapEntities entities = chooseEntities(map.grid);
 
-    const auto used = [&entities](const Position& position) {
-        return position == entities.start || position == entities.goal ||
-               position == entities.switchA || position == entities.switchB;
-    };
-    const auto guard = std::find_if(available.begin(), available.end(),
-                                    [&used](const Position& position) { return !used(position); });
-    entities.guard = *guard;
+        map.grid.at(entities.goal) = Exit{};
+        map.grid.at(entities.switchA) = Switch{SwitchId::A};
+        map.grid.at(entities.switchB) = Switch{SwitchId::B};
 
-    map.grid.at(entities.goal) = Exit{};
-    map.grid.at(entities.switchA) = Switch{SwitchId::A};
-    map.grid.at(entities.switchB) = Switch{SwitchId::B};
-
-    return entities;
-}
+        return entities;
+    }
 
 } // namespace map_layout

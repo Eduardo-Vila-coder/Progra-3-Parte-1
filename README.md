@@ -88,6 +88,10 @@ ctest --test-dir build --output-on-failure            # Linux, macOS, MinGW
 ctest --test-dir build -C Debug --output-on-failure   # Windows con Visual Studio
 ```
 
+Si está en CLion puede simplemente dirigirse a la barra superior y cambiar el ejecutable a probar (es un menu
+deplegable a la izquierda inmediata del símbolo del martillo). En el menú desplegable seleccione el ejecutable `check`
+ y presione el martillo (Build). Esto compila y ejecuta todas las pruebas.
+
 | Prueba | Qué cubre |
 |---|---|
 | `grid_test` | acceso válido e inválido, bordes y esquinas, versiones const, iteradores y orden por filas |
@@ -118,10 +122,11 @@ g++ -std=c++20 -Iinclude -fsyntax-only tests/negative/bad_policy.cpp
 El compilador rechaza la llamada a `runSimulation` porque `BadPolicy::selectAction` devuelve `int` en
 lugar de `Action`, así que `BadPolicy` no satisface el concept.
 
-## Ejecución
+## Ejecución (más enfocada en la primera parte del proyecto)
+Para acceder a la instalación de la 2da parte dirijase a la sección **Instalación (proyecto 2)**
 
 ```text
-escape_circuit [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2]
+escape_circuit [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2] [--level facil|medio|dificil]
                 [--controller human|random|heuristic] [--seed N] [--headless]
 ```
 
@@ -130,6 +135,7 @@ escape_circuit [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2]
 | `--ascii` | emoji | Dibuja con caracteres ASCII en lugar de emojis |
 | `--difficulty` | `standard` | Perfil de reglas (ver tabla de perfiles) |
 | `--scenario` | `1` | Mapa de 20 × 30 que se carga desde `assets/maps/` |
+| `--level` | — | Mapa generado por `map_generator` (`mapa_facil.txt`, `mapa_medio.txt` o `mapa_dificil.txt`, en `assets/maps/`). Reemplaza a `--scenario`; si se usan las dos, vale la última |
 | `--controller` | `human` | Quién decide: el jugador, la política aleatoria o la heurística |
 | `--seed` | `42` | Semilla de la partida y del controlador aleatorio |
 | `--headless` | — | Juega la partida completa con el controlador automático, sin interfaz, e imprime el resultado |
@@ -155,6 +161,7 @@ comando muestra un mensaje y no consume turno.
 ./build/escape_circuit --ascii --difficulty hard --scenario 2   # jugar en ASCII
 ./build/escape_circuit --controller heuristic --scenario 2      # ver jugar a la heurística
 ./build/escape_circuit --controller random --seed 7 --headless  # simulación reproducible
+./build/escape_circuit --level medio                            # jugar el mapa generado de nivel medio
 ```
 
 **Windows (PowerShell o Command Prompt)**
@@ -175,11 +182,24 @@ cmake --build build --target map_generator --config Debug
 Opciones: `--seed`, `--maps` (hasta 10), `--workers`, `--extra` (aperturas adicionales),
 `--output` y `--help`.
 
+Aclaración: Si los mapas generados son imposibles de resolver debido a la ubicación del vigilante, simplemente genere
+de nuevo los mapas pero con una semilla distinta.
+
 Salida del modo `--headless`:
 ```text
 $ escape_circuit --controller heuristic --scenario 2 --headless
 Semilla 42: ¡Partida completada! Turnos 31 | Energía 32 | Recursos 0 | Puntaje 0
 ```
+
+Después de generar los mapas, se juega uno de ellos con `--level`:
+
+```powershell
+.\build\escape_circuit.exe --level facil
+.\build\escape_circuit.exe --level dificil --difficulty hard
+```
+
+`--level` elige **el mapa** y `--difficulty` elige **las reglas** (energía, costos y turnos); se pueden
+combinar libremente.
 
 **Notas para Windows**
 - Desde CLion, la ventana *Run* no es una terminal real y FTXUI solo dibuja la primera línea. Activa
