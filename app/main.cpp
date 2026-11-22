@@ -37,6 +37,7 @@
 #include "circuit_escape/environment.hpp"
 #include "circuit_escape/game_rules.hpp"
 #include "circuit_escape/scenario.hpp"
+#include "executable_path.hpp"
 
 #ifdef _WIN32
 #ifndef NOMINMAX
@@ -161,20 +162,6 @@ int runInteractive(DemoEnvironment& environment, std::unique_ptr<IController> au
 
     screen.Loop(component);
     return 0;
-}
-
-// Ruta completa del ejecutable que se está ejecutando (para ubicar los mapas instalados)
-std::filesystem::path executablePath(const char* argv0) {
-#ifdef _WIN32
-    wchar_t buffer[MAX_PATH];
-    const DWORD length = GetModuleFileNameW(nullptr, buffer, MAX_PATH);
-    if (length > 0 && length < MAX_PATH) {
-        return std::filesystem::path(buffer);
-    }
-#endif
-    std::error_code error;
-    const std::filesystem::path path = std::filesystem::weakly_canonical(argv0, error);
-    return error ? std::filesystem::path(argv0) : path;
 }
 
 }  // namespace

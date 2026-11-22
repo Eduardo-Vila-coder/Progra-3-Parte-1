@@ -315,10 +315,14 @@ Deja `dist\CircuitoDeEscape-2.0.0-Windows.exe` (instalador) y `dist\CircuitoDeEs
 **Ejecutar:** menú Inicio → *Circuito de Escape*, o desde una terminal:
 ```powershell
 & "C:\Program Files\Circuito de Escape\bin\escape_circuit.exe" --level facil
-& "C:\Program Files\Circuito de Escape\bin\map_generator.exe" --seed 42 --workers 4 --output "$env:USERPROFILE\Documents\mapas"
+& "C:\Program Files\Circuito de Escape\bin\map_generator.exe" --seed 42 --workers 4
 ```
-El generador necesita una carpeta de salida con permiso de escritura (no `C:\Program Files`).
-El programa instalado busca los mapas en `bin\..\assets\maps`, así que funciona desde cualquier carpeta.
+Los dos programas instalados usan la carpeta `assets\maps` de la instalación (`bin\..\assets\maps`),
+así que funcionan desde cualquier carpeta: `map_generator` escribe ahí `mapa_facil.txt`,
+`mapa_medio.txt` y `mapa_dificil.txt`, y `escape_circuit --level ...` los carga. El instalador da
+permiso de escritura sobre esa carpeta al grupo Usuarios, así que no hace falta ser administrador.
+Con la semilla 42 se generan los mismos tres niveles que vienen instalados. Para escribirlos en otra
+carpeta se usa `--output`, por ejemplo `--output "$env:USERPROFILE\Documents\mapas"`.
 
 **Desinstalar:** Configuración → Aplicaciones → *Circuito de Escape* → Desinstalar, o el acceso
 *Uninstall* del menú Inicio. Se eliminan los programas, los mapas y los accesos directos.

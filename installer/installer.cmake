@@ -66,6 +66,11 @@ if(WIN32)
     set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON) # desinstala una versión previa antes de instalar
     set(CPACK_NSIS_MODIFY_PATH ON)                     # ofrece agregar bin al PATH para usarlo desde la terminal
     set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\escape_circuit.exe")
+    # El generador instalado reescribe los niveles en assets\maps (los que carga el juego).
+    # C:\Program Files solo lo puede modificar un administrador, así que el instalador da permiso
+    # de modificación sobre esa carpeta al grupo Usuarios (SID S-1-5-32-545) con icacls.
+    set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
+        "nsExec::Exec 'icacls \\\"$INSTDIR\\\\assets\\\\maps\\\" /grant *S-1-5-32-545:(OI)(CI)M /T'")
 else()
     set(CPACK_GENERATOR "TGZ")
 endif()

@@ -72,14 +72,17 @@ Si aparece un error sobre el generador (*"Ninja"* o *"Makefiles"* no coincide), 
 & "C:\Program Files\Circuito de Escape\bin\escape_circuit.exe" --level facil
 ```
 
-- Generador de mapas: desde una terminal, con una carpeta de salida en la que el usuario pueda
-  escribir (Windows no permite escribir en `C:\Program Files` sin permisos de administrador):
+- Generador de mapas, desde una terminal:
 
 ```powershell
-& "C:\Program Files\Circuito de Escape\bin\map_generator.exe" --seed 42 --workers 4 --output "$env:USERPROFILE\Documents\mapas"
+& "C:\Program Files\Circuito de Escape\bin\map_generator.exe" --seed 42 --workers 4
 ```
 
-Con la semilla 42 genera los mismos tres niveles que vienen instalados.
+Por defecto escribe `mapa_facil.txt`, `mapa_medio.txt` y `mapa_dificil.txt` en la carpeta
+`assets\maps` de la instalación, que es la que usa el juego (`escape_circuit --level facil|medio|dificil`).
+El instalador da permiso de modificación sobre esa carpeta al grupo Usuarios (con `icacls`), así que no
+hace falta ser administrador. Con la semilla 42 se generan los mismos tres niveles que vienen
+instalados. Para escribirlos en otra carpeta: `--output "$env:USERPROFILE\Documents\mapas"`.
 
 ## 4. Desinstalar
 
