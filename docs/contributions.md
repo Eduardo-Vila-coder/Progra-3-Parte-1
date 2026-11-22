@@ -5,30 +5,37 @@ historial del repositorio (`git log --author="<nombre>"`) y en los pull requests
 
 | Integrante | Usuario de GitHub | Área principal |
 |---|---|---|
-| Eduardo Raúl Vila Castellares | Eduardo-Vila-coder | Repositorio, reglas y perfiles de dificultad |
-| Yerik Dylan Vega Santillan | Yerik-Vega | Agente, resolución de acciones, reset, concepts y simulación |
-| Cristhian Gabriel Jinchuña Cama | cristhianjinchuna-dev | Energía, interacciones, eventos, pruebas y documentación |
-| Mathias Alonso Cavalcanti Estacio | MatCavUTEC | Controladores, escenarios, término e integración del juego |
-| Mathius Edgar Quispe Sicha | hfuv (MQS144) | Tablero, celdas, posición e interfaz de consola |
+| Eduardo Raúl Vila Castellares | Eduardo-Vila-coder | Repositorio, reglas y perfiles de dificultad; mapas con Kruskal y clasificación por nivel |
+| Yerik Dylan Vega Santillan | Yerik-Vega | Agente, resolución de acciones, reset, concepts y simulación; pruebas nuevas y su automatización |
+| Cristhian Gabriel Jinchuña Cama | cristhianjinchuna-dev | Energía, interacciones, eventos, pruebas y documentación; interruptores, vigilante e instalador |
+| Mathias Alonso Cavalcanti Estacio | MatCavUTEC | Controladores, escenarios, término e integración del juego; orden del turno y adaptación del motor |
+| Mathius Edgar Quispe Sicha | hfuv (MQS144) | Tablero, celdas, posición e interfaz de consola; validación de mapas y ayuda H con Dijkstra |
 
-## Detalle por integrante
+## Detalle por integrante (con la 2da parte del proyecto incluida)
 
-### Eduardo Raúl Vila Castellares — Repositorio, reglas y perfiles
+### Eduardo Raúl Vila Castellares — Repositorio, reglas y perfiles; generación de mapas con Kruskal y clasificación por nivel
 - Creación del repositorio (los pull requests se abren desde su cuenta).
 - `NavigationEnvironment::availableActions()` y sus casos borde (esquinas, muros).
 - `GameRules` con los perfiles `easy`, `standard` y `hard` (`game_rules.hpp`) y sus pruebas.
 - Pruebas de consulta y realización de movimientos en `environment_test.cpp`.
 - Primera versión de `observation.hpp`.
+- Algoritmo de construccion de un mapas (como un grafo) con Kruskal
+- Implementación de DisjoinSet
+- Clasificación y elección por nivel de los mapas
+- Implementación del test para probar Kruskal, DisjoinSet y la clasificación y elección de mapas
 
-### Yerik Dylan Vega Santillan — Agente, acciones, reset, concepts y simulación
+### Yerik Dylan Vega Santillan — Agente, acciones, reset, concepts y simulación; pruebas nuevas y automatización de pruebas
 - Atributos del agente e invariantes (5.3) y resolución de acciones en `step`.
 - `reset(seed)` con copia del tablero original y semilla.
 - Concept `NavigationPolicy` y políticas de navegación en `controllers.hpp`.
 - Simulación reproducible `runSimulation` (`simulation.hpp`) y `simulation_test.cpp`.
 - Prueba negativa de compilación del concept (`tests/negative/bad_policy.cpp`).
 - Revisión e integración de la mayoría de los pull requests.
+- Nuevas pruebas del proyecto 2: reinicio, espera, captura en la salida, entre otras.
+- Actualización de las pruebas del proyecto 1.
+- Automatización de todas las pruebas.
 
-### Cristhian Gabriel Jinchuña Cama — Energía, eventos, pruebas y documentación
+### Cristhian Gabriel Jinchuña Cama — Energía, eventos, pruebas y documentación; interruptores, vigilante e instalador
 - Estructura inicial de carpetas, `CMakeLists.txt` e integración de FTXUI v7.0.3.
 - Energía e interacciones con celdas: costos, recurso, batería, trampa y límites de energía, con
   `interactions_test.cpp`.
@@ -40,8 +47,12 @@ historial del repositorio (`git log --author="<nombre>"`) y en los pull requests
   consola con el último evento relevante.
 - Pruebas `grid_test.cpp` y `ui_test.cpp`, y registro de `simulation_test` en CTest.
 - `README.md` y `docs/design.md`.
+- Lógica de los interruptores A y B y de la salida.
+- Lógica del comportamiento del vigilante.
+- Instalador de los dos ejecutables (generador de mapas y juego) y prueba de su correcta desinstalación.
+- Actualización del `README.md` con todos los cambios del proyecto 2.
 
-### Mathias Alonso Cavalcanti Estacio — Controladores, escenarios, término e integración
+### Mathias Alonso Cavalcanti Estacio — Controladores, escenarios, término e integración; orden del turno y adaptación del motor
 - Condiciones de término y su precedencia (`goalReached` > `noEnergy` > `turnLimit`).
 - Política aleatoria con semilla y política heurística (distancia Manhattan, sin retroceder), template
   `bestBy` y `controllers_test.cpp`.
@@ -53,15 +64,18 @@ historial del repositorio (`git log --author="<nombre>"`) y en los pull requests
   `switches_test`; la política heurística ahora va primero al interruptor pendiente más cercano (usa
   `bestBy` y el mapa de la observación) con su prueba en `controllers_test`; y actualización de
   `docs/design.md` con el orden del turno del proyecto 2.
+- Actualización del resto de funciones del proyecto (como el `reset`).
 
-### Mathius Edgar Quispe Sicha (hfuv / MQS144) — Tablero, dominio e interfaz
+### Mathius Edgar Quispe Sicha (hfuv / MQS144) — Tablero, dominio e interfaz; validación de mapas y ayuda H con Dijkstra
 - `Grid<CellType, Rows, Columns>` con `std::array`, acceso validado e iteradores.
 - Tipos de celda y `CellTraits` (`cells.hpp`).
 - `Position`, `Action`, `neighbor` y `toString` (`position.hpp`).
 - Interfaz de consola con FTXUI (`console_ui.hpp`, `src/console_ui.cpp`): render emoji/ASCII,
   coordenadas y ayuda.
+- Validación de los mapas con Dijkstra.
+- Ayuda H con Dijkstra.
 
-## Revisión de pull requests
+## Revisión de pull requests (solo en la parte 1)
 
 Los cambios se integraron en `main` mediante pull requests desde ramas por tarea (por ejemplo
 `desarrollo_game_rules`, `Condiciones-de-termino`, `energia_interacciones`, `Concepts`,
@@ -87,5 +101,5 @@ Algunas partes se desarrollaron con ayuda de asistentes de IA, como se indica en
 código (`[Se usó IA …]`). Las pruebas `grid_test` y `ui_test`, las precondiciones del constructor,
 `CellTraits`, `HumanController` y la documentación se hicieron con asistencia de Claude. En el
 proyecto 2, el mapa de solo lectura de `Observation`, su prueba y la actualización de `design.md` se
-hicieron con asistencia de Claude (marcado con `[Se usó IA …]` en el código). Todo el código fue revisado, compilado y probado
-por el grupo.
+hicieron con asistencia de Claude (marcado con `[Se usó IA …]` en el código). También se realizó con ayuda de IA la
+implementación de Kruskal, el DisjoinSet, la clasificación y elección de mapas y el test correspondiente.
