@@ -282,13 +282,19 @@ void GameSession::decideWith(IController &controller)
 
 KeyResult GameSession::handle(const ftxui::Event &event)
 {
+    if (showRouteHelp_ && event == ftxui::Event::Escape)
+    {
+        showRouteHelp_ = false;
+        message_ = environment_.isFinished() ? finalResult_ : (automatic_ ? automaticHint : "");
+        return KeyResult::handled;
+    }
     const std::optional<UiCommand> command = ui_.translate(event);
 
     if (!command)
     {
         // Modo automático: Espacio o Enter pide la acción al controlador
         const bool advance = event == ftxui::Event::Character(' ') || event == ftxui::Event::Return;
-        if (automatic_ && advance && !environment_.isFinished())
+        if (automatic_ && advance && !environment_.isFinished() && !showRouteHelp_)
         {
             decideWith(*automatic_);
             return KeyResult::handled;
@@ -307,6 +313,7 @@ KeyResult GameSession::handle(const ftxui::Event &event)
                           { return KeyResult::quit; },
                           [this](HelpCommand)
                           {
+                            if (showRouteHelp_) { showRouteHelp_ = false; return KeyResult::handled; }
                               showHelp_ = !showHelp_;
                               return KeyResult::handled;
                           },
@@ -316,15 +323,29 @@ KeyResult GameSession::handle(const ftxui::Event &event)
                                   message_ = finalResult_;
                                   return KeyResult::handled;
                                 }
+                             if (showRouteHelp_)              // segunda pulsación: cerrar
+                                {
+                                    showRouteHelp_ = false;
+                                    message_ = automatic_ ? automaticHint : "";
+                                    return KeyResult::handled;
+                                }
                             //NOTE:configuracion por donde pasa la cantidad de pasos
                             Config_algoritmo config;
-                            message_=  config.calculo(environment_.grid(),
-                                  environment_.getAgentPosition(),
-                                  environment_.state().goal,environment_.maxTurns(),environment_.getEnergy());
+                            const auto ruta = config.ayuda(environment_.grid(),
+                                   environment_.getAgentPosition(),
+                                   environment_.getEnergy(),
+                                   environment_.maxTurns());
+                            routeHelpLines_ = Config_algoritmo::lineasAyuda(ruta);
+                            showRouteHelp_ = true;
+                            showHelp_ = false;
+                            message_ = "Ayuda de energía: P o Esc para volver. No transcurre ningún turno.";
                             return KeyResult::handled;
                           },
                           [this](Action action)
                           {
+                            if (showRouteHelp_){
+                                return KeyResult::handled;
+                            }
                               if (environment_.isFinished())
                               {
                                   message_ = finalResult_;
@@ -346,7 +367,21 @@ KeyResult GameSession::handle(const ftxui::Event &event)
 
 ftxui::Element GameSession::render() const
 {
-    // La UI solo dibuja el estado que produce el entorno
-    ftxui::Element view = showHelp_ ? ui_.help() : ui_.render(environment_, recentEvents_, isAutomatic());
+    ftxui::Element view;
+    if (showRouteHelp_)
+    {
+        ftxui::Elements filas;
+        filas.push_back(ftxui::text(" AYUDA DE ENERGÍA (Dijkstra) ") | ftxui::bold | ftxui::center);
+        filas.push_back(ftxui::separator());
+        for (const std::string &linea : routeHelpLines_)
+            filas.push_back(ftxui::text(linea));
+        filas.push_back(ftxui::separator());
+        filas.push_back(ftxui::text("P, H o Esc para volver a jugar") | ftxui::dim);
+        view = ftxui::vbox(std::move(filas)) | ftxui::border;
+    }
+    else
+    {
+        view = showHelp_ ? ui_.help() : ui_.render(environment_, recentEvents_, isAutomatic());
+    }
     return ftxui::vbox({view, ftxui::text(message_)});
 }

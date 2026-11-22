@@ -47,6 +47,9 @@ public:
 
 private:
     RenderMode mode_;
+    bool showHelp_{false};
+    bool showRouteHelp_{false};                 
+    std::vector<std::string> routeHelpLines_;
 };
 
 // Resultado de la partida (enunciado 4): si se completó, turnos, energía, recursos y puntaje
