@@ -22,7 +22,8 @@ struct QuitCommand
 struct HelpCommand
 {
 };
-using UiCommand = std::variant<Action, QuitCommand, HelpCommand>;
+struct Calculo_ruta{};
+using UiCommand = std::variant<Action, QuitCommand, HelpCommand,Calculo_ruta>;
 enum class RenderMode
 {
     emoji,
