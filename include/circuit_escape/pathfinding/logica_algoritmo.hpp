@@ -5,8 +5,12 @@
 #include "circuit_escape/position.hpp"
 #include "circuit_escape/scenario.hpp"
 #include <algorithm>
+#include <array>
 #include <exception>
+#include <functional>
+#include <limits>
 #include <optional>
+#include <queue>
 #include <string>
 #include <variant>
 #include <vector>
