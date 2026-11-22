@@ -16,6 +16,7 @@
 #include "circuit_escape/map_generation/map_layout.hpp"
 #include "circuit_escape/map_generation/map_selector.hpp"
 #include "circuit_escape/pathfinding/logica_algoritmo.hpp"
+#include "circuit_escape/game_rules.hpp"
 
 // Resultado de validar un mapa. Es el contrato que deberá devolver el MapValidator
 // de Mathius; mientras tanto permite probar el coordinador con un validador de prueba.
@@ -66,7 +67,12 @@ private:
 template <std::size_t Rows, std::size_t Columns>
 class MazeMapValidator : public IMapValidator<Rows, Columns>
 {
+    int initialEnergy_;
 public:
+    // Energía inicial del perfil con el que se va a jugar (Standard = 60)
+    explicit MazeMapValidator(int initialEnergy = GameRules<>{}.initialMaxEnergy)
+        : initialEnergy_(initialEnergy) {}
+
     [[nodiscard]] ValidationResult validate(const BuiltMap<Rows, Columns>& map) override
     {
         struct Node
@@ -99,19 +105,37 @@ public:
         };
 
         Nodes nodes{map.grid};
-        const auto start = nodes.construir(0, 0);
-        const auto goal = nodes.construir(map_layout::lastRoomIndex(Rows),
-                                          map_layout::lastRoomIndex(Columns));
-        if (!start || !start->pisable || !goal || !goal->pisable) {
-            return ValidationResult{map.id, -1, false, "inicio o salida no transitables"};
-        }
+        const map_layout::MapEntities e = map_layout::chooseEntities(map.grid);
 
-        std::vector<std::pair<int, int>> path;
-        const int cost = Disjtrak{}.buscar(nodes, *start, *goal, path);
-        if (cost < 0) {
-            return ValidationResult{map.id, -1, false, "la salida no es alcanzable"};
+        // Costo mínimo de un tramo con Dijkstra; -1 si no hay camino
+        const auto leg = [&](Position from, Position to) {
+            std::vector<std::pair<int, int>> path;
+            return Disjtrak{}.buscar(nodes, *nodes.construir(from.row, from.column),
+                                     *nodes.construir(to.row, to.column), path);
+        };
+        // Suma de los tres tramos de un recorrido; -1 si algún tramo no tiene camino
+        const auto route = [&](Position first, Position second) {
+            const int a = leg(e.start, first);
+            const int b = leg(first, second);
+            const int c = leg(second, e.goal);
+            return (a < 0 || b < 0 || c < 0) ? -1 : a + b + c;
+        };
+
+        const int viaAB = route(e.switchA, e.switchB);   // inicio → A → B → salida
+        const int viaBA = route(e.switchB, e.switchA);   // inicio → B → A → salida
+
+        if (viaAB < 0 && viaBA < 0) {
+            return ValidationResult{map.id, -1, false, "objetivo inaccesible"};
         }
-        return ValidationResult{map.id, cost, true, {}};
+        const int best = (viaAB < 0) ? viaBA : (viaBA < 0) ? viaAB : std::min(viaAB, viaBA);
+
+        // Sin baterías: la energía debe ser MAYOR que el costo (llegar con 0 no gana)
+        if (best >= initialEnergy_) {
+            return ValidationResult{map.id, best, false,
+                "energia insuficiente: costo " + std::to_string(best) +
+                ", energia " + std::to_string(initialEnergy_)};
+        }
+        return ValidationResult{map.id, best, true, {}};
     }
 };
 

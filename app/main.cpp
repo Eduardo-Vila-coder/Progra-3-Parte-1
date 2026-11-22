@@ -5,7 +5,7 @@
 // pide una acción (humana o automática), llama a step y vuelve a dibujar.
 //
 // Uso:
-//   escape_circuit [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2]
+//   escape_circuit [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2] [--level facil|medio|dificil]
 //                   [--controller human|random|heuristic] [--seed N] [--headless]
 //
 //   --ascii       dibuja con caracteres ASCII en vez de emojis
@@ -66,7 +66,8 @@ struct Options {
 
 void printUsage() {
     std::cout << "Uso: escape_circuit [--ascii] [--difficulty easy|standard|hard] [--scenario 1|2]\n"
-                 "                      [--controller human|random|heuristic] [--seed N] [--headless]\n";
+                 "                      [--level facil|medio|dificil] [--controller human|random|heuristic]\n"
+                 "                      [--seed N] [--headless]\n";
 }
 
 // Lee los argumentos. Lanza std::invalid_argument si alguno no es válido.
@@ -89,6 +90,12 @@ Options parseOptions(int argc, char* argv[]) {
             if (number == "1") options.scenarioFile = scenario01File;
             else if (number == "2") options.scenarioFile = scenario02File;
             else throw std::invalid_argument("escenario desconocido: " + number);
+        } else if (argument == "--level" && hasValue) {
+            const std::string level = argv[++i];
+            if (level == "facil") options.scenarioFile = "mapa_facil.txt";
+            else if (level == "medio") options.scenarioFile = "mapa_medio.txt";
+            else if (level == "dificil") options.scenarioFile = "mapa_dificil.txt";
+            else throw std::invalid_argument("nivel desconocido: " + level);
         } else if (argument == "--controller" && hasValue) {
             const std::string name = argv[++i];
             if (name == "human") options.controller = ControllerKind::human;
